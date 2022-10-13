@@ -2,7 +2,7 @@ import os
 import random
 import shutil
 
-def preprocess_renderings():
+def copy_renderings():
     DEST_PATH = 'data/render_data/'
     if os.path.isdir(DEST_PATH):
         shutil.rmtree(DEST_PATH)
@@ -15,13 +15,15 @@ def preprocess_renderings():
     ORIGIN_PATH = 'data/ShapeNetRendering/'
     classes = os.listdir(ORIGIN_PATH)
 
+    print("Start copying renders")
     for c in classes:
+        print("Copying renders class "+c)
         # For every object class
         random.seed(6)
         classPath = ORIGIN_PATH+c+'/'
         objects = os.listdir(classPath)
         allObjects.append(objects)
-        for i, o in enumerate(objects):
+        for o in objects:
             # For each object class
             path = classPath+o+'/rendering/'
             files = os.listdir(path)
@@ -32,15 +34,14 @@ def preprocess_renderings():
             # Copy selected images
             selectedFiles = files[:n_images]
             d_path = DEST_PATH+o+'/'
-            os.mkdir(d_path)
-            for img in selectedFiles:
-                copyOrigin = path+img
-                copyDestination = d_path+img
-                shutil.copy(copyOrigin, copyDestination)
-            
-            if i==9: break
-
-        break # Remove when using all of them
+            try:
+                os.mkdir(d_path)
+                for img in selectedFiles:
+                    copyOrigin = path+img
+                    copyDestination = d_path+img
+                    shutil.copy(copyOrigin, copyDestination)
+            except:
+                print("Repeated object:", o)
     
     return classes, allObjects
 
@@ -52,14 +53,35 @@ def getObjIds():
 
     for c in classes:
         objects.append(os.listdir(RENDER_PATH+c))
-        
-        break # Remove when using all of them
 
     return classes, objects
 
+def copy_models(classes, objects):
+    DEST_PATH = 'data/model_data/'
+    if os.path.isdir(DEST_PATH):
+        shutil.rmtree(DEST_PATH)
+    os.mkdir(DEST_PATH)
+
+    ORIGIN_PATH = 'data/ShapeNetCore.v2/'
+
+    print("Copyings models")
+    for i, c in enumerate(classes):
+        print("Copying model class", c)
+        classPath = os.path.join(ORIGIN_PATH, c)+"/"
+        for o in objects[i]:
+            copyOrigin = classPath+o+"/models/model_normalized.obj"
+            copyDestination = DEST_PATH+o+".obj"
+            try:
+                shutil.copy(copyOrigin, copyDestination)
+            except:
+                pass
 
 def main():
-    preprocess_renderings()
+    #getObjIds()
+    classes, objects = copy_renderings()
+    copy_models(classes, objects)
+
+
 
 
 if __name__=="__main__":
