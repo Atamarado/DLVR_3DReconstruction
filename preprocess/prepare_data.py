@@ -32,10 +32,17 @@ def copy_renderings():
             n_images = random.randint(MIN_IMAGES, MAX_IMAGES)
             random.shuffle(files)
             # Copy selected images
-            selectedFiles = files[:n_images]
+            mainImg = files[0]
+            selectedFiles = files[1:n_images]
             d_path = DEST_PATH+o+'/'
             try:
                 os.mkdir(d_path)
+                # Copy main image
+                copyOrigin = path+mainImg
+                copyDestination = d_path+'main.png'
+                shutil.copy(copyOrigin, copyDestination)
+
+                # Copy the other images (if any)
                 for img in selectedFiles:
                     copyOrigin = path+img
                     copyDestination = d_path+img
@@ -81,8 +88,6 @@ def main():
     #getObjIds()
     classes, objects = copy_renderings()
     copy_models(classes, objects)
-
-
 
 
 if __name__=="__main__":
