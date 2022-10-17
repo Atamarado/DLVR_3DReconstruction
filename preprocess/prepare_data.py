@@ -42,6 +42,7 @@ def copy_renderings():
                     shutil.copy(copyOrigin, copyDestination)
             except:
                 print("Repeated object:", o)
+        return classes[:1], allObjects
     
     return classes, allObjects
 
