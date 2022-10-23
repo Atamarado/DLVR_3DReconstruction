@@ -78,6 +78,22 @@ class Decoder(tf.Module):
     
     def __call__(self, x):
         self.layers(x)
+        
+
+class PatchNet(tf.Module):
+    def __init__(self, batch_size, patch_size, min_channels, name = "patchnet"):
+        super(PatchNet, self).__init__(name)
+        input_size = (batch_size, patch_size, patch_size, 3)
+        encoded_size = (batch_size, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
+        self.encoder = Encoder_common(input_size, min_channels)
+        self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
+        self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
+    
+    def __call__(self, x):
+        encoded = self.encoder(x)
+        depth_map = self.depth_decoder(encoded)
+        normals_map = self.normals_decoder(encoded)
+        return depth_map, normals_map
 
 
 input_size = (batch_size, patch_size, patch_size, 3)
@@ -86,3 +102,5 @@ encoder_common = Encoder_common(input_size, min_channels)
 encoded_size = (batch_size, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
 depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
 normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
+
+patch_net = PatchNet(batch_size, patch_size, min_channels)
