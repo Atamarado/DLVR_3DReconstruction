@@ -8,10 +8,6 @@ Created on Sun Oct 23 19:19:22 2022
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D
 
-batch_size = 32
-patch_size = 128
-min_channels = 32
-
 class ConvLayer(tf.Module):
     def __init__(self, out_channels, name = "ConvLayer"):
         super(ConvLayer, self).__init__(name)
@@ -94,13 +90,3 @@ class PatchNet(tf.Module):
         depth_map = self.depth_decoder(encoded)
         normals_map = self.normals_decoder(encoded)
         return depth_map, normals_map
-
-
-input_size = (batch_size, patch_size, patch_size, 3)
-encoder_common = Encoder_common(input_size, min_channels)
-
-encoded_size = (batch_size, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
-depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
-normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
-
-patch_net = PatchNet(batch_size, patch_size, min_channels)

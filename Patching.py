@@ -44,10 +44,16 @@ def patching(img, patch_size):
     output = np.repeat(None, channels)
     
     # compute number of necessary patches in each dimension
-    n_height = np.ceil(height / patch_size)
-    n_width = np.ceil(width / patch_size)
+    n_height = int(np.ceil(height / patch_size))
+    n_width = int(np.ceil(width / patch_size))
+    
+    height_cuts = None
+    width_cuts = None
+    patches = np.repeat(None, channels)
     
     for i in range(channels):
-        img_chan = img[:,:,i]
+        patches[i], height_cuts, width_cuts = patch_matrix(img[:,:,i], patch_size, n_height, n_width)
+    
+    return patches, height_cuts, width_cuts
         
     

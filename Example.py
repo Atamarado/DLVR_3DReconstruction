@@ -8,7 +8,7 @@ Created on Mon Oct 24 10:52:07 2022
 import numpy as np
 import tensorflow as tf
 from PatchNet_tf import Encoder_common, Decoder, PatchNet
-from Patching import patch_matrix
+from Patching import patching
 
 batch_size = 32
 patch_size = 128
@@ -36,16 +36,17 @@ plt.imshow(car)
          
 # test patches with simple numbers
 numfield = np.array([[(10 * j) + i for i in range(0, 10)] for j in range(0, 10)])
-patches, _, _ = patch_matrix(numfield, 4, 3, 3)
+numfield = numfield.reshape((10, 10, 1))
+patches, _, _ = patching(numfield, 4)
 
 # test patches with car picture
-car_patches, _, _ = patch_matrix(car[:,:,2], 80, 3, 3)
+car_patches, _, _ = patching(car, 80)
 
 
 fig, axes = plt.subplots(nrows=3, ncols=3)
 plt.tight_layout()
 for i in range(3):
     for j in range(3):
-        axes[i][j].imshow(car_patches[i * 3 + j], cmap = "binary_r")
+        axes[i][j].imshow(car_patches[1][i * 3 + j], cmap = "binary_r")
                
 plt.show()
