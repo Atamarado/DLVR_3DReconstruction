@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 from PatchNet_tf import Encoder_common, Decoder, PatchNet
 from Patching import patching
+from Stitching import compute_overlap_matrix, compute_pixel_differences
 
 batch_size = 32
 patch_size = 128
@@ -37,7 +38,10 @@ plt.imshow(car)
 # test patches with simple numbers
 numfield = np.array([[(10 * j) + i for i in range(0, 10)] for j in range(0, 10)])
 numfield = numfield.reshape((10, 10, 1))
-patches, _, _ = patching(numfield, 4)
+patches, hi, wi = patching(numfield, 4)
+
+overlaps = compute_overlap_matrix(hi, wi)
+differences = compute_pixel_differences(patches[0], hi, wi, overlaps) 
 
 # test patches with car picture
 car_patches, _, _ = patching(car, 80)
