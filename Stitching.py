@@ -89,3 +89,14 @@ def compute_translation_loss(offsets, differences):
                 residuals = np.concatenate((residuals, difference + offset_i - offsets[j - 1]))
             
     return residuals
+
+def compute_translation_offsets(patches, height_intervals, width_intervals):
+    # compute overlaps 
+    overlaps = compute_overlap_matrix(height_intervals, width_intervals)
+    # compute pixel differences
+    differences = compute_pixel_differences(patches, height_intervals, width_intervals, overlaps)
+    # optimize translation offset
+    x0 = np.zeros(len(patches) - 1)
+    LQ_result = least_squares(compute_translation_loss, x0, kwargs = {"differences": differences})
+    # return the optimal offsets
+    return LQ_result.x
