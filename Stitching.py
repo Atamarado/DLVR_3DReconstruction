@@ -5,6 +5,7 @@ Created on Mon Oct 24 10:55:26 2022
 @author: Marc Johler
 """
 import numpy as np
+from scipy.optimize import least_squares
 
 def compute_interval_overlap(interval1, interval2):
     min1 = np.min(interval1)
@@ -69,5 +70,22 @@ def compute_pixel_differences(patches, height_intervals, width_intervals, overla
                     differences = np.append(differences, patch_i[h_i, w_i] - patch_j[h_j, w_j])
             difference_matrix[i, j] = differences
     return difference_matrix
-        
-    
+             
+
+def compute_translation_loss(offsets, differences):
+    n_patches = differences.shape[0]
+    # length of the residuals is triangle number of n_patches - 1
+    residuals = np.array([])
+    for i in range(n_patches - 1):
+        if i == 0:
+            offset_i = 0
+        else:
+            offset_i = offsets[i - 1]
+        for j in range(i + 1, n_patches):
+            difference = differences[i, j]
+            if difference is None:
+                residuals = np.append(residuals, 0)
+            else:
+                residuals = np.concatenate((residuals, difference + offset_i - offsets[j - 1]))
+            
+    return residuals

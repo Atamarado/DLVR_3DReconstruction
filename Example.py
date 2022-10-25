@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from PatchNet_tf import Encoder_common, Decoder, PatchNet
 from Patching import patching
-from Stitching import compute_overlap_matrix, compute_pixel_differences
+from Stitching import compute_overlap_matrix, compute_pixel_differences, compute_translation_loss
 
 batch_size = 32
 patch_size = 128
@@ -40,11 +40,25 @@ numfield = np.array([[(10 * j) + i for i in range(0, 10)] for j in range(0, 10)]
 numfield = numfield.reshape((10, 10, 1))
 patches, hi, wi = patching(numfield, 4)
 
+# add random noise to patches, so that they can be used as dummy for the depth map
+for j in range(len(patches[0])):
+    patches[0][j] = patches[0][j] +  ((np.random.rand(4, 4) - 0.5) * 40).astype(int)
+
 overlaps = compute_overlap_matrix(hi, wi)
 differences = compute_pixel_differences(patches[0], hi, wi, overlaps) 
 
+# minimize translation offset
+from scipy.optimize import least_squares
+x0 = np.repeat(0, 8)
+
+LQ_results = least_squares(compute_translation_loss, x0, kwargs = {"differences": differences})
+
 # test patches with car picture
 car_patches, _, _ = patching(car, 80)
+
+# add random noise to the car patches
+for j in range(len(car_patches[1])):
+    car_patches[1][j] = car_patches[1][j] +  ((np.random.rand(80, 80) - 0.5) * 40).astype(int)
 
 
 fig, axes = plt.subplots(nrows=3, ncols=3)
