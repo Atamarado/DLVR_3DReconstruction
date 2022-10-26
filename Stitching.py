@@ -100,3 +100,31 @@ def compute_translation_offsets(patches, height_intervals, width_intervals):
     LQ_result = least_squares(compute_translation_loss, x0, kwargs = {"differences": differences})
     # return the optimal offsets
     return LQ_result.x
+
+def depth_map_stitching(image_shape, patches, height_intervals, width_intervals, include_offsets = True):
+    # check if number of sets of patches is accurate for a depth map
+    assert len(patches) == 1
+    # overwrite patches with their only entry
+    patches = patches[0]
+    image_depth_map = np.zeros(image_shape)
+    denominators = np.zeros(image_shape)
+    # compute the offsets necessary for stitching
+    translation_offsets = compute_translation_offsets(patches, height_intervals, width_intervals)
+    # first patch depth map with no offset
+    height_interval = height_intervals[0]
+    width_interval = width_intervals[0]
+    image_depth_map[height_interval[0]:height_interval[1], 
+                    width_interval[0]:width_interval[1]] += patches[0]
+    denominators[height_interval[0]:height_interval[1], 
+                 width_interval[0]:width_interval[1]] += 1
+    # compute the final depth_map
+    for i in range(len(patches) - 1):
+        height_interval = height_intervals[i + 1]
+        width_interval = width_intervals[i + 1]
+        # add patch depth map to the depth map for the whole image
+        image_depth_map[height_interval[0]:height_interval[1], 
+                        width_interval[0]:width_interval[1]] += patches[i + 1] + translation_offsets[i] * include_offsets
+        denominators[height_interval[0]:height_interval[1], 
+                     width_interval[0]:width_interval[1]] += 1
+    # return depth_map for the whole image
+    return image_depth_map / denominators

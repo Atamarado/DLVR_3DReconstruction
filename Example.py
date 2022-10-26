@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from PatchNet_tf import Encoder_common, Decoder, PatchNet
 from Patching import patching
-from Stitching import compute_translation_offsets
+from Stitching import compute_translation_offsets, depth_map_stitching
 import cv2
 from matplotlib import pyplot as plt
 from Patching import patching
@@ -82,3 +82,37 @@ for j in range(len(patches_biased) -1):
     closeness_bool[j] = math.isclose(translation_offsets_b[j], -j - 1, abs_tol = 10**-6)
 
 assert closeness_bool.all() 
+
+##### Example 4: Stitch depth maps of patches back together #####
+car = cv2.imread("images/car.png")
+plane = cv2.imread("images/plane.png")
+# choose one channel, so that there is only one output channel
+car_channel0 = car[:,:,0]
+car_channel0_shape = car_channel0.shape
+
+car_channel0 = car_channel0.reshape((car_channel0_shape[0], 
+                                     car_channel0_shape[1], 1))
+
+car_patches, hi, wi = patching(car_channel0, 40)
+
+# add random noise to the car patches
+for j in range(len(car_patches[0])):
+    car_patches[0][j] = (car_patches[0][j] / (j + 1)).astype(int)
+
+fig, axes = plt.subplots(nrows=6, ncols=6)
+plt.tight_layout()
+for i in range(6):
+    for j in range(6):
+        axes[i][j].imshow(car_patches[0][i * 6 + j], cmap = "binary_r")
+               
+plt.show()
+
+# stitch the pieces back together
+# without translation offsets
+final_depth_map = depth_map_stitching(car_channel0_shape, car_patches, hi, wi, False)
+# with translation offsets
+final_depth_map_translated = depth_map_stitching(car_channel0_shape, car_patches, hi, wi)
+# compare the depth maps
+plt.imshow(final_depth_map, cmap = "binary_r")
+plt.show()
+plt.imshow(final_depth_map_translated, cmap = "binary_r")
