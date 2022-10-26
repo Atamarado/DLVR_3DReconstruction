@@ -13,6 +13,7 @@ from Stitching import compute_translation_offsets
 import cv2
 from matplotlib import pyplot as plt
 from Patching import patching
+import math
 
 ##### Example 1: Usage of PatchNet #####
 batch_size = 32
@@ -57,9 +58,27 @@ numfield = numfield.reshape((10, 10, 1))
 patches, hi, wi = patching(numfield, 4)
 
 # add random noise to patches, so that they can be used as dummy for the depth map
-for j in range(len(patches[0])):
-    patches[0][j] = patches[0][j] +  ((np.random.rand(4, 4) - 0.5) * 40).astype(int)
+patches_random_noise = patches[0].copy()
+for j in range(len(patches_random_noise)):
+    patches_random_noise[j] = patches_random_noise[j] +  ((np.random.rand(4, 4) - 0.5) * 40).astype(int) 
 
 # compute translation offsets for the 2nd to the last patch 
 # (first patch has fixed offset of 0) 
-translation_offsets = compute_translation_offsets(patches[0], hi, wi)
+translation_offsets_rn = compute_translation_offsets(patches_random_noise, hi, wi)
+# --> way too complex to create test set from random noise
+
+# add fixed offset to each patch, to check if function can reconstruct it
+patches_biased = patches[0].copy()
+for j in range(len(patches_biased)):
+    patches_biased[j] = patches_biased[j] + j
+    
+# compute translation offsets for the 2nd to the last patch 
+# (first patch has fixed offset of 0) 
+translation_offsets_b = compute_translation_offsets(patches_biased, hi, wi)
+
+# check closeness to expected result for each offset 
+closeness_bool = np.repeat(False, len(patches_biased) - 1)
+for j in range(len(patches_biased) -1):
+    closeness_bool[j] = math.isclose(translation_offsets_b[j], -j - 1, abs_tol = 10**-6)
+
+assert closeness_bool.all() 
