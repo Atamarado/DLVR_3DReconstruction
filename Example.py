@@ -6,7 +6,7 @@ Created on Mon Oct 24 10:52:07 2022
 """
 import numpy as np
 import tensorflow as tf
-from PatchNet_tf import Encoder_common, Decoder, PatchNet
+from PatchNet_tf import Encoder_common, Decoder, PatchNet, VANet_adapted
 from Patching import patching
 from Stitching import compute_translation_offsets, depth_map_stitching
 import cv2
@@ -117,3 +117,21 @@ final_depth_map_translated = depth_map_stitching(car_channel0_shape, car_patches
 plt.imshow(final_depth_map, cmap = "binary_r")
 plt.show()
 plt.imshow(final_depth_map_translated, cmap = "binary_r")
+
+
+##### Example 5: Stitch encoder feature maps back together #####
+car = cv2.imread("images/car.png")
+
+car = tf.convert_to_tensor(car)
+
+# patch_size and decoder_shape must be compatible 
+# (otherwise there will be an assertion error to tell the user what is wrong)
+patch_size = 128
+min_channels = 16
+decoder_shape = (12, 12)
+
+vanet = VANet_adapted(1, patch_size, min_channels, decoder_shape)
+
+stitched_map = vanet(car)
+
+assert stitched_map.shape == (decoder_shape[0], decoder_shape[1], min_channels * 8)

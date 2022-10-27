@@ -93,14 +93,15 @@ class PatchNet(tf.Module):
         normals_map = self.normals_decoder(encoded)
         return depth_map, normals_map
     
-
+# Implement decoder
 class VANet_adapted(tf.Module):
-    def __init__(self, batch_size, patch_size, min_channels, name = "vanet"):
+    def __init__(self, batch_size, patch_size, min_channels, decoder_dim, name = "vanet"):
         super(VANet_adapted, self).__init__(name)
         input_size = (batch_size, patch_size, patch_size, 3)
         encoded_size = (batch_size, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
         self.patch_size = patch_size
         self.encoder = Encoder_common(input_size, min_channels)
+        self.decoder_dim = decoder_dim
         self.decoder = None # add the decoder part here 
     
     def __call__(self, x):
@@ -119,7 +120,7 @@ class VANet_adapted(tf.Module):
                 patch_i = tf.reshape(patch_i, (1, self.patch_size, self.patch_size, input_shape[-1]))
                 encoded_patches[i] = self.encoder(patch_i)[0]
             # stitch them back together
-            stitched_map = feature_map_stitching(encoded_patches, n_height, n_width)
+            stitched_map = feature_map_stitching(encoded_patches, n_height, n_width, self.decoder_dim)
             # decoder 
             # self.decoder(stitched_map)
             return stitched_map
@@ -128,15 +129,3 @@ class VANet_adapted(tf.Module):
         # first compute the gradient for the decoder
         dloss_dD = self.tape.gradient(loss, self.decoder.layers.trainable_variables)
         dD_dE = self.tape.gradient(dloss_dD, self.encoder.layer.trainable_variables)
-        
-
-import cv2
-car = cv2.imread("images/car.png")
-plane = cv2.imread("images/plane.png")
-
-car = tf.convert_to_tensor(car)
-
-vanet = VANet_adapted(1, 128, 16)
-vanet(car)
-            
-            

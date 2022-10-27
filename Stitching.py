@@ -146,21 +146,54 @@ def normals_map_stitching(image_shape, patches, height_intervals, width_interval
     pass
             
 
-def feature_map_stitching(patches, n_height, n_width):
+def feature_map_stitching(patches, n_height, n_width, decoder_dim):
     if len(patches.shape) == 4:
         patches = patches[0]
     
     height, width, channels = patches[0].shape
-
+    
+    # assert that height of the patches don't exceed decoder dimension
+    if height > decoder_dim[0]:
+        raise Exception("decoder dimension (height) is too small for patch size")
+    if width > decoder_dim[1]:
+        raise Exception("decoder dimension (width) is too small for patch size")
+    
     # apply the stitching for each channel
-    stitched_map = np.zeros((height * n_height , width * n_width, channels))
+    stitched_map = np.zeros((decoder_dim[0] , decoder_dim[1], channels))
+    # compute the number of active patches for each feature in the common map
+    denominators = stitched_map.copy()
+    # compute overlap
+    height_overlap = n_height * height - decoder_dim[0]
+    width_overlap = n_width * width - decoder_dim[1]
+    
+    # assert that overlaps are positive
+    if height_overlap < 0:
+        raise Exception("decoder dimension (height) is too large for patch size and number of patches")
+    if width_overlap < 0:
+        raise Exception("decoder dimension (width) is too large for patch size and number of patches")
+    
+    # per patch overlap
+    if n_height > 1:
+        height_overlap_average = height_overlap / (n_height - 1)
+    else:
+        height_overlap_average = 0
+    if n_width > 1:
+        width_overlap_average = width_overlap / (n_width - 1)
+    else:
+        width_overlap_average = 0
+    
     for i in range(len(patches)):
-        h_i_min = int(np.floor(i / n_width) * height)
+        height_level = np.floor(i / n_width)
+        
+        h_i_min = int(height_level * height - np.round(height_overlap_average * height_level))
         h_i_max = h_i_min + height
         
-        w_i_min = int((i % n_width) * width)
+        weight_level = i % n_width
+        
+        w_i_min = int(weight_level * width - np.round(width_overlap_average * weight_level))
         w_i_max = w_i_min + width
         
-        stitched_map[h_i_min:h_i_max,w_i_min:w_i_max] = patches[i]
-
-    return stitched_map
+        stitched_map[h_i_min:h_i_max,w_i_min:w_i_max] += patches[i]
+        denominators[h_i_min:h_i_max,w_i_min:w_i_max] += 1
+    
+    return stitched_map / denominators
