@@ -4,7 +4,6 @@ Created on Mon Oct 24 10:52:07 2022
 
 @author: Marc Johler
 """
-
 import numpy as np
 import tensorflow as tf
 from PatchNet_tf import Encoder_common, Decoder, PatchNet
@@ -34,13 +33,14 @@ patch_net = PatchNet(batch_size, patch_size, min_channels)
 # test patches with car picture
 car = cv2.imread("images/car.png")
 plane = cv2.imread("images/plane.png")
-plt.imshow(car)
 
+car = tf.convert_to_tensor(car)
+plt.imshow(car)
 car_patches, _, _ = patching(car, 80)
 
 # add random noise to the car patches
-for j in range(len(car_patches[1])):
-    car_patches[1][j] = car_patches[1][j] +  ((np.random.rand(80, 80) - 0.5) * 40).astype(int)
+#for j in range(len(car_patches[1])):
+    #car_patches[1][j] = car_patches[1][j] +  ((np.random.rand(80, 80) - 0.5) * 40).astype(int)
 
 
 fig, axes = plt.subplots(nrows=3, ncols=3)
@@ -55,12 +55,13 @@ plt.show()
 # generate patches from a simple number field
 numfield = np.array([[(10 * j) + i for i in range(0, 10)] for j in range(0, 10)])
 numfield = numfield.reshape((10, 10, 1))
+numfield = tf.convert_to_tensor(numfield)
 patches, hi, wi = patching(numfield, 4)
 
 # add random noise to patches, so that they can be used as dummy for the depth map
 patches_random_noise = patches[0].copy()
 for j in range(len(patches_random_noise)):
-    patches_random_noise[j] = patches_random_noise[j] +  ((np.random.rand(4, 4) - 0.5) * 40).astype(int) 
+    patches_random_noise[j] = patches_random_noise[j] +  tf.convert_to_tensor(((np.random.rand(4, 4) - 0.5) * 20).astype(int))
 
 # compute translation offsets for the 2nd to the last patch 
 # (first patch has fixed offset of 0) 

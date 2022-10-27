@@ -4,8 +4,8 @@ Created on Mon Oct 24 10:58:19 2022
 
 @author: Marc Johler
 """
-
 import numpy as np
+import tensorflow as tf
 
 def patch_matrix(img_matrix, patch_size, n_height, n_width):
     height, width = img_matrix.shape
@@ -22,11 +22,11 @@ def patch_matrix(img_matrix, patch_size, n_height, n_width):
     height_intervals = np.repeat(None, n_height * n_width) 
     width_intervals = np.repeat(None, n_height * n_width)
     for h in range(n_height - 1):
-        height_cut_start = int(np.round(height_cuts[h]))
+        height_cut_start = int(tf.round(height_cuts[h]))
         height_cut_end = height_cut_start + patch_size
         # patches in the interior of the picture
         for w in range(n_width - 1):
-            width_cut_start = int(np.round(width_cuts[w]))
+            width_cut_start = int(tf.round(width_cuts[w]))
             width_cut_end = width_cut_start + patch_size
             index = h * n_width + w
             patches[index] = img_matrix[height_cut_start:height_cut_end, width_cut_start:width_cut_end]
@@ -41,7 +41,7 @@ def patch_matrix(img_matrix, patch_size, n_height, n_width):
         width_intervals[index] = np.array([width - patch_size, width])
     # last patches in height
     for w in range(n_width - 1):
-        width_cut_start = int(np.round(width_cuts[w]))
+        width_cut_start = int(tf.round(width_cuts[w]))
         width_cut_end = width_cut_start + patch_size
         index = (n_height - 1) * n_width + w
         patches[index] = img_matrix[-patch_size:, width_cut_start:width_cut_end]
@@ -54,16 +54,15 @@ def patch_matrix(img_matrix, patch_size, n_height, n_width):
     width_intervals[-1] = np.array([width - patch_size, width])
     
     return patches, height_intervals, width_intervals
+    return tf.convert_to_tensor(patches), height_intervals, width_intervals
     
 
-def patching(img, patch_size):
+def patching(img, patch_size, return_intervals = True):
     height, width, channels = img.shape
     
-    output = np.repeat(None, channels)
-    
     # compute number of necessary patches in each dimension
-    n_height = int(np.ceil(height / patch_size))
-    n_width = int(np.ceil(width / patch_size))
+    n_height = int(tf.math.ceil(height / patch_size))
+    n_width = int(tf.math.ceil(width / patch_size))
     
     height_intervals = None
     width_intervals = None
@@ -72,6 +71,8 @@ def patching(img, patch_size):
     for i in range(channels):
         patches[i], height_intervals, width_intervals = patch_matrix(img[:,:,i], patch_size, n_height, n_width)
     
-    return patches, height_intervals, width_intervals
+    if return_intervals:
+        return patches, height_intervals, width_intervals
+    return patches, n_height, n_width
         
     
