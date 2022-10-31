@@ -1,1 +1,6 @@
-*/data
+.pycache
+.vscode
+Pixel2Mesh/Data/checkpoint
+Pixel2Mesh/Data/examples/*.obj
+Pixel2Mesh/p2m/__pycache__/*
+__pycache__/
