@@ -10,14 +10,14 @@ class DataGenerator(tf.keras.utils.Sequence):
                  shuffle=True,
                  validation=False,
                  train_val_split=0.2):
-        
+
         self.batch_size = batch_size
         self.validation = False
         self.train_val_split = 0.2
         self.x_folder = os.path.join(path, 'render_data/')
         self.y_folder = os.path.join(path, 'model_data/')
         
-        self.objs = os.listdir(os.path.join(path, self.y_folder))
+        self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.y_folder)]
         if shuffle:
             np.random.shuffle(self.objs)
 
@@ -34,7 +34,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         objFolder = os.path.join(self.x_folder, name)
 
         # Load main image
-        mainImg = tf.keras.preprocessing.image.load_img(os.path.join(objFolder, 'main.png'))
+        mainImg = tf.keras.preprocessing.image.load_img(objFolder + '/main.png')
         mainImg_arr = tf.keras.preprocessing.image.img_to_array(mainImg)
 
         # Load additional views
@@ -42,19 +42,19 @@ class DataGenerator(tf.keras.utils.Sequence):
         imgList = os.listdir(objFolder)
         otherImages = []
         for img in imgList:
-            otherImages.append(tf.keras.prorpocessing.image.img_to_array(tf.keras.preprocessing.image_load_img(os.path.join(objFolder, img))))
+            otherImages.append(tf.keras.preprocessing.image.img_to_array(tf.keras.preprocessing.image.load_img(os.path.join(objFolder, img))))
 
         return tuple([mainImg_arr, otherImages])
     
     def __get_data(self, batches):
         # Generates data containing batch_size samples
         X_batch = np.asarray([self.__get_input(name) for name in batches])
-        y_batch = np.asarray([self.__get_output(name) for name in batches]])
+        y_batch = np.asarray([self.__get_output(name) for name in batches])
         return X_batch, y_batch
     
     def __get_output(self, name):
-        # TODO: Decide output format for the model as the y_data
-        pass
+        objFile = os.path.join(self.y_folder, name+'.obj')
+        return np.loadtxt(objFile)
 
     def __getitem__(self, index):
         batches = self.objs[index * self.batch_size:(index + 1) * self.batch_size]
