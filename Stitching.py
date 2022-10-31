@@ -144,10 +144,33 @@ def normals_map_stitching(image_shape, patches, height_intervals, width_interval
         for axis in range(3):
             sq_dir = patches[axis][i]**2
     pass
-            
 
+
+def pad_patch(patch, goal_dim, h_i_min, h_i_max, w_i_min, w_i_max, ones):
+    goal_height, goal_width = goal_dim
+    channels = patch.shape[-1]
+    # measure how much padding is required
+    add_above = h_i_min 
+    add_below = goal_height - h_i_max
+    add_left = w_i_min
+    add_right = goal_width - w_i_max
+
+    paddings = tf.constant(([add_above, add_below], [add_left, add_right]))
+    
+    all_channels = tf.zeros((goal_height, goal_width, 0), dtype = tf.dtypes.float32)
+    all_denominators = tf.zeros((goal_height, goal_width, 0), dtype = tf.dtypes.float32)
+    
+    padded_ones = tf.reshape(tf.pad(ones, paddings), (goal_height, goal_width, 1))
+    
+    for i in range(channels):
+        padded_patch = tf.reshape(tf.pad(patch[:,:,i], paddings), (goal_height, goal_width, 1))
+        all_channels = tf.concat([all_channels, padded_patch], axis = -1)
+        all_denominators = tf.concat([all_denominators, padded_ones], axis = -1)
+    return all_channels, all_denominators
+    
 def feature_map_stitching(patches, n_height, n_width, decoder_dim):
-    if len(patches.shape) == 4:
+    # batch_size > 1 not possible currently
+    if len(patches.shape) == 5:
         patches = patches[0]
     
     height, width, channels = patches[0].shape
@@ -159,9 +182,12 @@ def feature_map_stitching(patches, n_height, n_width, decoder_dim):
         raise Exception("decoder dimension (width) is too small for patch size")
     
     # apply the stitching for each channel
-    stitched_map = np.zeros((decoder_dim[0] , decoder_dim[1], channels))
+    stitched_map = tf.zeros((decoder_dim[0] , decoder_dim[1], channels))
     # compute the number of active patches for each feature in the common map
-    denominators = stitched_map.copy()
+    denominators = tf.zeros((decoder_dim[0] , decoder_dim[1], channels))
+    # ones for the denominators
+    ones = tf.ones((height, width), dtype = tf.dtypes.float32)
+    
     # compute overlap
     height_overlap = n_height * height - decoder_dim[0]
     width_overlap = n_width * width - decoder_dim[1]
@@ -193,7 +219,11 @@ def feature_map_stitching(patches, n_height, n_width, decoder_dim):
         w_i_min = int(weight_level * width - np.round(width_overlap_average * weight_level))
         w_i_max = w_i_min + width
         
-        stitched_map[h_i_min:h_i_max,w_i_min:w_i_max] += patches[i]
-        denominators[h_i_min:h_i_max,w_i_min:w_i_max] += 1
+        padded_patch, padded_ones = pad_patch(patches[i], decoder_dim, 
+                                              h_i_min, h_i_max, w_i_min, w_i_max,
+                                              ones)
+        
+        stitched_map = stitched_map + padded_patch
+        denominators = denominators + padded_ones
     
     return stitched_map / denominators

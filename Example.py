@@ -135,3 +135,6 @@ vanet = VANet_adapted(1, patch_size, min_channels, decoder_shape)
 stitched_map = vanet(car)
 
 assert stitched_map.shape == (decoder_shape[0], decoder_shape[1], min_channels * 8)
+
+##### Example 6: Test backpropagation
+encoder_gradients = vanet.step(car)
