@@ -54,7 +54,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     
     def __get_output(self, name):
         objFile = os.path.join(self.y_folder, name+'.obj')
-        return np.loadtxt(objFile)
+        return np.loadtxt(objFile, dtpye='str')
 
     def __getitem__(self, index):
         batches = self.objs[index * self.batch_size:(index + 1) * self.batch_size]
