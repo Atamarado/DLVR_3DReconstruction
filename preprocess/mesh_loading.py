@@ -158,6 +158,7 @@ def write_obj(path, vertices, faces):
             
 
 def cal_lap_index(mesh_neighbor):
+    mesh_neighbor = np.array(mesh_neighbor)
     lap_index = np.zeros([mesh_neighbor.shape[0], 2 + 8]).astype(np.int32)
     for i, j in enumerate(mesh_neighbor):
         lenj = len(j)

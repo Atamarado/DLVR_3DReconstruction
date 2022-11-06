@@ -78,12 +78,12 @@ def process3DMesh(originPath: str, destPath: str):
 
     raw_mesh = load_obj(originPath,no_normal=True)
     mesh = trimesh.Trimesh(vertices=raw_mesh['vertices'], faces=(raw_mesh['faces']-1), process=False)
-    assert np.all(raw_mesh['faces'] == mesh.faces+1)
+    trimesh.grouping.merge_vertices(mesh)
+    # assert np.all(raw_mesh['faces'] == mesh.faces+1)
     coords_1 = np.array(mesh.vertices, dtype=np.float32)
     info['coords'] = coords_1
 
     # Stage 1 Auxiliary matrix
-    print(mesh.vertex_adjacency_graph)
     adj_1 = nx.adjacency_matrix(mesh.vertex_adjacency_graph, nodelist=range(len(coords_1)))
     cheb_1 = chebyshev_polynomials(adj_1,1)
     info['support']['stage1'] = cheb_1
@@ -197,7 +197,8 @@ def copy_models(classes, objects):
 
 def main():
     #getObjIds()
-    process3DMesh("data/ShapeNetCore.v2/02691156/10155655850468db78d106ce0a280f87/models/model_normalized.obj", "data/model_data/10155655850468db78d106ce0a280f87.dat")
+    process3DMesh("model_shapenet.obj", "output.dat")
+    # process3DMesh("data/ShapeNetCore.v2/02691156/10155655850468db78d106ce0a280f87/models/model_normalized.obj", "data/model_data/10155655850468db78d106ce0a280f87.dat")
 
     # classes, objects = copy_renderings()
     # copy_models(classes, objects)
