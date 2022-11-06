@@ -48,6 +48,28 @@ class Encoder_common(tf.Module):
     
     def __call__(self, x):
         return self.layers(x)
+    
+class Encoder_adapted(tf.Module):
+    def __init__(self, input_size, min_channels, name = "Encoder_common"):
+        super(Encoder_adapted, self).__init__(name)
+        self.layers = tf.keras.Sequential([
+            ConvLayer(min_channels),
+            ConvLayer(min_channels),
+            ConvLayer(min_channels),
+            MaxPool2D(2),
+            ConvLayer(min_channels * 2),
+            ConvLayer(min_channels * 2),
+            ConvLayer(min_channels * 2),
+            MaxPool2D(2),
+            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4)
+            ])
+        
+        self.layers.build(input_size)
+    
+    def __call__(self, x):
+        return self.layers(x)
         
 class Decoder(tf.Module):
     def __init__(self, input_size, min_channels, out_channels, name = "decoder"):
@@ -96,13 +118,13 @@ class PatchNet(tf.Module):
         return depth_map, normals_map
     
 # Implement decoder
-class VANet_adapted(tf.Module):
+class DLVR_net(tf.Module):
     def __init__(self, batch_size, patch_size, min_channels, decoder_dim, name = "vanet"):
-        super(VANet_adapted, self).__init__(name)
+        super(DLVR_net, self).__init__(name)
         input_size = (batch_size, patch_size, patch_size, 3)
         encoded_size = (batch_size, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
         self.patch_size = patch_size
-        self.encoder = Encoder_common(input_size, min_channels)
+        self.encoder = Encoder_adapted(input_size, min_channels)
         self.decoder_dim = decoder_dim
         self.decoder = None # add the decoder part here 
         # delete this after decoder has been implemented
@@ -136,7 +158,7 @@ class VANet_adapted(tf.Module):
     def step(self, x):
         with tf.GradientTape(persistent = True) as tape:
             stitched_map = self(x)
-            random_gradients = tf.convert_to_tensor(np.random.rand(self.decoder_dim[0], self.decoder_dim[1], self.min_channels * 8))
+            random_gradients = tf.convert_to_tensor(np.random.rand(self.decoder_dim[0], self.decoder_dim[1], self.min_channels * 4))
             loss = mean_squared_error(random_gradients, stitched_map)
             avg_loss = tf.reduce_mean(loss)
         # first compute the gradient for the decoder

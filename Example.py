@@ -6,7 +6,7 @@ Created on Mon Oct 24 10:52:07 2022
 """
 import numpy as np
 import tensorflow as tf
-from PatchNet_tf import Encoder_common, Decoder, PatchNet, VANet_adapted
+from PatchNet_tf import Encoder_common, Decoder, PatchNet, DLVR_net
 from Patching import patching
 from Stitching import compute_translation_offsets, depth_map_stitching
 import cv2
@@ -128,13 +128,13 @@ car = tf.convert_to_tensor(car)
 # (otherwise there will be an assertion error to tell the user what is wrong)
 patch_size = 128
 min_channels = 16
-decoder_shape = (12, 12)
+decoder_shape = (56, 56)
 
-vanet = VANet_adapted(1, patch_size, min_channels, decoder_shape)
+dlvr_net = DLVR_net(1, patch_size, min_channels, decoder_shape)
 
-stitched_map = vanet(car)
+stitched_map = dlvr_net(car)
 
-assert stitched_map.shape == (decoder_shape[0], decoder_shape[1], min_channels * 8)
+assert stitched_map.shape == (decoder_shape[0], decoder_shape[1], min_channels * 4)
 
 ##### Example 6: Test backpropagation
-encoder_gradients = vanet.step(car)
+dlvr_net.step(car)
