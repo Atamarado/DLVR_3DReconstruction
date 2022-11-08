@@ -66,8 +66,8 @@ def patching(img, patch_size, return_intervals = True):
     channels = int(channels)
     
     # compute number of necessary patches in each dimension
-    n_height = int(tf.math.ceil(float(height) / float(patch_size)))
-    n_width = int(tf.math.ceil(float(width) / float(patch_size)))
+    n_height = int(np.ceil(float(height) / float(patch_size)))
+    n_width = int(np.ceil(float(width) / float(patch_size)))
     
     height_intervals = None
     width_intervals = None
