@@ -60,6 +60,11 @@ def patch_matrix(img_matrix, patch_size, n_height, n_width):
 def patching(img, patch_size, return_intervals = True):
     height, width, channels = img.shape
     
+    # weird type cast to avoid error in Colab
+    height = int(height)
+    width = int(width)
+    channels = int(channels)
+    
     # compute number of necessary patches in each dimension
     n_height = int(tf.math.ceil(float(height) / float(patch_size)))
     n_width = int(tf.math.ceil(float(width) / float(patch_size)))
