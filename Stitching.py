@@ -129,20 +129,34 @@ def depth_map_stitching(image_shape, patches, height_intervals, width_intervals,
     # return depth_map for the whole image
     return tf.convert_to_tensor(image_depth_map / denominators)
 
+
+def normalize_predictions(patches):
+    normalized_patches = np.array(patches)
+    for i in range(len(normalized_patches)):
+        normalize_with = np.reshape(np.sum(normalized_patches[i]**2, axis = -1)**(0.5),
+                                    (patches.shape[1], patches.shape[2], 1))
+        normalized_patches[i] = normalized_patches[i] / normalize_with
+    return tf.convert_to_tensor(normalized_patches)
+
 # THIS FUNCTION IS INCOMPLETE
 def normals_map_stitching(image_shape, patches, height_intervals, width_intervals):
-    # check if number of sets of patches is accurate for a normals map
-    assert len(patches) == 3
-    n_patches = len(patches[0])
-    patch_shape = patches[0][0].shape
-    image_normals_map = tf.repeat(tf.zeros(image_shape).reshape((image_shape[0], image_shape[1], 1)), 3, axis = 2)
-    denominators = image_normals_map.copy()
+    # initialize an average map
+    normals_map = np.zeros(image_shape)
+    denominators = np.zeros(image_shape)
+    # normalize patches
+    patches = normalize_predictions(patches)
     # compute the final normals map
-    for i in range(n_patches):
-        sq_dir = tf.zeros(patch_shape).reshape((patch_shape[0], patch_shape[1]), 1)
-        for axis in range(3):
-            sq_dir = patches[axis][i]**2
-    pass
+    for i in range(len(patches)):
+        height_interval = height_intervals[i]
+        width_interval = width_intervals[i]
+        # add patch depth map to the depth map for the whole image
+        normals_map[height_interval[0]:height_interval[1], 
+                    width_interval[0]:width_interval[1]] += patches[i]
+        denominators[height_interval[0]:height_interval[1], 
+                     width_interval[0]:width_interval[1]] += 1
+    # normalize the average normals map again
+    average_normals = np.reshape(normals_map / denominators, tuple([1]) + image_shape)
+    return normalize_predictions(average_normals)
 
 
 def pad_patch(patch, goal_dim, h_i_min, h_i_max, w_i_min, w_i_max, ones):

@@ -6,7 +6,7 @@ Created on Thu Nov 10 11:02:17 2022
 """
 from PatchNet_tf import PatchNet
 from Patching import tensor_patching
-from Stitching import depth_map_stitching
+from Stitching import depth_map_stitching, normals_map_stitching
 from Losses import mean_squared_error
 import cv2
 import tensorflow as tf
@@ -59,6 +59,7 @@ for i, patch in enumerate(patches):
     
 # stitch the maps of the patches back together
 pred_depth_map = depth_map_stitching(car.shape, depth_maps, height_intervals, width_intervals)
+pred_normals_map = normals_map_stitching(car.shape, normals_maps, height_intervals, width_intervals)
 # valuation loss
 true_depth_map = tf.cast(car[:,:,0], dtype = tf.double)
 print(mean_squared_error(true_depth_map, pred_depth_map, batched = False))
