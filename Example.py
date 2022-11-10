@@ -15,7 +15,6 @@ from Patching import patching
 import math
 
 ##### Example 1: Usage of PatchNet #####
-batch_size = 32
 patch_size = 128
 min_channels = 32
 
@@ -25,17 +24,16 @@ min_channels = 32
 #encoded_size = (batch_size, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
 #depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
 #normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
-
-patch_net = PatchNet(batch_size, patch_size, min_channels)
-  
-       
-##### Example 2: Visualisation of Patches #####
-# test patches with car picture
 car = cv2.imread("images/car.png")
 plane = cv2.imread("images/plane.png")
 
 car = tf.convert_to_tensor(car)
 plt.imshow(car)
+
+patch_net = PatchNet(patch_size, min_channels)
+  
+##### Example 2: Visualisation of Patches #####
+# test patches with car picture
 car_patches, _, _ = patching(car, 80)
 
 # add random noise to the car patches

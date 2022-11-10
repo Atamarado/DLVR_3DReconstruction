@@ -103,12 +103,11 @@ def compute_translation_offsets(patches, height_intervals, width_intervals):
     return LQ_result.x
 
 def depth_map_stitching(image_shape, patches, height_intervals, width_intervals, include_offsets = True):
-    # check if number of sets of patches is accurate for a depth map
-    assert len(patches) == 1
-    # overwrite patches with their only entry
-    patches = patches[0]
-    image_depth_map = np.zeros(image_shape)
-    denominators = np.zeros(image_shape)
+    # exclude the channel dimension
+    patches = patches[:,:,:,0]
+    # initialize the output variables
+    image_depth_map = np.zeros(image_shape[:-1])
+    denominators = np.zeros(image_shape[:-1])
     # compute the offsets necessary for stitching
     translation_offsets = compute_translation_offsets(patches, height_intervals, width_intervals)
     # first patch depth map with no offset

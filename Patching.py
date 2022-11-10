@@ -83,4 +83,22 @@ def patching(img, patch_size, return_intervals = True):
         return patches, height_intervals, width_intervals
     return patches, n_height, n_width
         
+
+def patches_to_tensor(patches, patch_size):
+    channels = len(patches)
+    n_patches = len(patches[0])
+    # allocate output space
+    patches_array = np.zeros((n_patches, patch_size, patch_size, channels))
+    # assign patches to the correct indices
+    for i in range(channels):
+        channel_i = patches[i]
+        for j in range(n_patches):
+            patches_array[j, :, :, i] = channel_i[j]
+    # convert to tensor once done
+    return tf.convert_to_tensor(patches_array)
+
+def tensor_patching(img, patch_size, return_intervals = True):
+    patches, n_height, n_width = patching(img, patch_size, return_intervals)
+    return patches_to_tensor(patches, patch_size), n_height, n_width
+    
     
