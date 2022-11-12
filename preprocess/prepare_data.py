@@ -1,6 +1,7 @@
 import os
 import shutil
 import numpy as np
+from PIL import Image
 
 def create_empty_folder(path):
     if os.path.isdir(path):
@@ -10,7 +11,7 @@ def create_empty_folder(path):
 def main():
     ORIGIN_FOLDER = 'data/textureless_deformable_surfaces'
     DEST_FOLDER = 'data/pnData'
-    INFO_TYPE = ['depth_maps', 'images', 'normals']
+    INFO_TYPE = ['images', 'depth_maps', 'normals']
 
     PATCH_SIZE = 128
 
@@ -36,38 +37,33 @@ def main():
             for pow in powList:
                 print("\t\tPow", pow)
                 powPath = os.path.join(iTypePath, pow)
-                rootName = "_".join([cat, iType, pow])
+                rootName = "_".join([cat, pow])
                 baseDestPath = os.path.join(os.path.join(DEST_FOLDER, iType), rootName)
 
                 fileList = os.listdir(powPath)
                 # For each file in the filelist
                 if iType == "images":
                     for file in fileList:
-                        shutil.copy(os.path.join(powPath, file), baseDestPath+file) # powPath It should be patches of 128 x 128
+                        img = Image.open(os.path.join(powPath, file))
+                        imarray = np.array(img)/255
+                        patchList = np.array([
+                            imarray[:PATCH_SIZE, :PATCH_SIZE],
+                            imarray[:PATCH_SIZE, -PATCH_SIZE:],
+                            imarray[-PATCH_SIZE:, :PATCH_SIZE],
+                            imarray[-PATCH_SIZE:, -PATCH_SIZE:]
+                        ])
+                        np.save(baseDestPath+file.replace(".tiff", ""), patchList)
+
                 elif iType == "depth_maps":
                     for file in fileList:
                         map = np.load(os.path.join(powPath, file))
                         map = map.f.depth
-                        patchList = [
-                            map[:PATCH_SIZE, :PATCH_SIZE],
-                            map[:PATCH_SIZE, -PATCH_SIZE:],
-                            map[-PATCH_SIZE:, :PATCH_SIZE],
-                            map[-PATCH_SIZE:, -PATCH_SIZE:]
-                        ]
-                        patchMaps = np.array(patchList)
-                        np.save(baseDestPath + file, patchMaps)
+                        np.save(baseDestPath + file.replace(".npz", ""), map)
                 else:
                     for file in fileList:
                         map = np.load(os.path.join(powPath, file))
                         map = map.f.normals
-                        patchList = [
-                            map[:PATCH_SIZE, :PATCH_SIZE],
-                            map[:PATCH_SIZE, -PATCH_SIZE:],
-                            map[-PATCH_SIZE:, :PATCH_SIZE],
-                            map[-PATCH_SIZE:, -PATCH_SIZE:]
-                        ]
-                        patchMaps = np.array(patchList)
-                        np.save(baseDestPath + file, patchMaps)
+                        np.save(baseDestPath + file.replace(".npz", ""), map)
 
     # depth = np.load("data/textureless_deformable_surfaces/cloth/depth_maps/Lc_left_edge/depth_0051.npz")
     # print("Hola")

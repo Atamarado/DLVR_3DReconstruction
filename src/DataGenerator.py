@@ -13,11 +13,13 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         self.batch_size = batch_size
         self.validation = False
-        self.train_val_split = 0.2
-        self.x_folder = os.path.join(path, 'render_data/')
-        self.y_folder = os.path.join(path, 'model_data/')
+        self.train_val_split = train_val_split
+
+        self.imagePath = os.path.join(path, 'images/')
+        self.depthPath = os.path.join(path, 'depth_maps/')
+        self.normalPath = os.path.join(path, 'normals/')
         
-        self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.y_folder)]
+        self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.imagePath)]
         if shuffle:
             np.random.shuffle(self.objs)
 
@@ -25,26 +27,16 @@ class DataGenerator(tf.keras.utils.Sequence):
         if validation:
             self.n = n_objs * train_val_split
         else:
-            self.n = n_objs * (1-train_val_split)
+            self.n = n_objs * (1.0-train_val_split)
     
     def on_epoch_end(self):
         pass
     
     def __get_input(self, name):
-        objFolder = os.path.join(self.x_folder, name)
-
-        # Load main image
-        mainImg = tf.keras.preprocessing.image.load_img(objFolder + '/main.png')
-        mainImg_arr = tf.keras.preprocessing.image.img_to_array(mainImg)
-
-        # Load additional views
-        # THE MAIN IMAGE IS LOADED HERE TOO! IT'S ON PURPOSE!!!!
-        imgList = os.listdir(objFolder)
-        otherImages = []
-        for img in imgList:
-            otherImages.append(tf.keras.preprocessing.image.img_to_array(tf.keras.preprocessing.image.load_img(os.path.join(objFolder, img))))
-
-        return tuple([mainImg_arr, otherImages])
+        try:
+            return np.load(os.path.join(self.imagePath, name+".npy"))
+        except:
+            print("Hola")
     
     def __get_data(self, batches):
         # Generates data containing batch_size samples
@@ -53,8 +45,9 @@ class DataGenerator(tf.keras.utils.Sequence):
         return X_batch, y_batch
     
     def __get_output(self, name):
-        objFile = os.path.join(self.y_folder, name+'.obj')
-        return np.loadtxt(objFile, dtpye='str')
+        depth = np.load(os.path.join(self.depthPath, name+".npy"))
+        normal = np.load(os.path.join(self.normalPath, name+".npy"))
+        return depth, normal
 
     def __getitem__(self, index):
         batches = self.objs[index * self.batch_size:(index + 1) * self.batch_size]
