@@ -49,20 +49,6 @@ for iteration in range(100):
         print(iteration, " done")
 
 # after training compute the depth_maps again, stitch them together and evaluate based on the whole picture
-n_patches = len(patches)
-depth_maps = np.zeros((n_patches, patch_size, patch_size, 1))
-normals_maps = np.zeros((n_patches, patch_size, patch_size, 3))
-for i, patch in enumerate(patches):
-    depth_map, normals_map = patchnet(tf.reshape(patch, (1, patch_size, patch_size, 3)))
-    depth_maps[i] = depth_map[0]
-    normals_maps[i] = normals_map[0]
-    
-# stitch the maps of the patches back together
-pred_depth_map = depth_map_stitching(car.shape, depth_maps, height_intervals, width_intervals)
-pred_normals_map = normals_map_stitching(car.shape, normals_maps, height_intervals, width_intervals)
-# valuation loss
 true_depth_map = tf.cast(car[:,:,0], dtype = tf.double)
-print(mean_squared_error(true_depth_map, pred_depth_map, batched = False))
-
-# show the depth map
-plt.imshow(pred_depth_map)    
+true_normals_map = car
+valuation_loss = patchnet.evaluate_on_image(car, true_depth_map, car)

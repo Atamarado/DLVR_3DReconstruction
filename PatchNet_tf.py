@@ -8,9 +8,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D
 from tensorflow.keras.optimizers import Adam
-from Patching import patching
-from Stitching import feature_map_stitching, depth_map_stitching
+from Patching import patching, tensor_patching
+from Stitching import feature_map_stitching, depth_map_stitching, normals_map_stitching
 from Losses import mean_squared_error
+from matplotlib import pyplot as plt
 
 class ConvLayer(tf.Module):
     def __init__(self, out_channels, name = "ConvLayer"):
@@ -109,13 +110,15 @@ class Decoder(tf.Module):
 class PatchNet(tf.Module):
     def __init__(self, patch_size, min_channels, name = "patchnet"):
         super(PatchNet, self).__init__(name)
-        input_size = (1, patch_size, patch_size, 3)
-        encoded_size = (1, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
+        input_size = (3, patch_size, patch_size, 3)
+        encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
         self.encoder = Encoder_common(input_size, min_channels)
         self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
         self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
         # initialize optimizer
         self.opt = Adam()
+        # save patch size for later usage
+        self.patch_size = patch_size
     
     def __call__(self, x):
         encoded = self.encoder(x)
@@ -136,6 +139,29 @@ class PatchNet(tf.Module):
         self.opt.apply_gradients(zip(grads, parameters))
         
     
+    def forward_image(self, img, print_maps = True):
+        patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
+        n_patches = len(patches)
+        # forward pass
+        depth_maps, normals_maps = self(patches)
+        # stitch the maps together
+        pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals)
+        pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
+        if print_maps:
+            plt.imshow(pred_depth_map)
+            #plt.imshow(normals_maps)
+        return pred_depth_map, pred_normals_map
+        
+    # method for feeding a whole picture and 
+    def evaluate_on_image(self, img, depth_map, normals_map, print_maps = True):
+        pred_depth_map, pred_normals_map = self.forward_image(img, print_maps)
+        # compute the loss (EDIT THIS to use the correct loss)
+        depth_loss = mean_squared_error(depth_map, pred_depth_map)
+        normals_loss = None
+        overall_loss = 0.5 * depth_loss # + 0.5 * normals_loss
+        return overall_loss
+        
+        
 # Implement decoder
 class DLVR_net(tf.Module):
     def __init__(self, batch_size, patch_size, min_channels, decoder_dim, name = "vanet"):

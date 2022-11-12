@@ -98,7 +98,7 @@ def patches_to_tensor(patches, patch_size):
     return tf.convert_to_tensor(patches_array)
 
 def tensor_patching(img, patch_size, return_intervals = True):
-    patches, n_height, n_width = patching(img, patch_size, return_intervals)
-    return patches_to_tensor(patches, patch_size), n_height, n_width
+    patches, height_info, width_info = patching(img, patch_size, return_intervals)
+    return patches_to_tensor(patches, patch_size), height_info, width_info
     
     

@@ -156,7 +156,7 @@ def normals_map_stitching(image_shape, patches, height_intervals, width_interval
                      width_interval[0]:width_interval[1]] += 1
     # normalize the average normals map again
     average_normals = np.reshape(normals_map / denominators, tuple([1]) + image_shape)
-    return normalize_predictions(average_normals)
+    return normalize_predictions(average_normals)[0]
 
 
 def pad_patch(patch, goal_dim, h_i_min, h_i_max, w_i_min, w_i_max, ones):
