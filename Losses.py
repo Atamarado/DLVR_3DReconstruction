@@ -89,16 +89,16 @@ def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.f
     """
 
     # Calculate the norm of the predicted normal vectors
-    norm_pred = tf.math.reduce_sum(tf.math.sqrt(tf.math.exp(pred_patch, 2)), axis=-1)
+    norm_pred = tf.norm(pred_patch, axis=-1, keepdims=True)
 
-    # Divide one (the incentive is to create unit length normals)
+    # Subtract one (the incentive is to create unit length normals)
     norm_pred = norm_pred - 1
 
     # Square it
-    norm_pred = tf.math.exp(norm_pred, 2)
+    norm_pred = tf.math.pow(norm_pred, 2)
     
     # add channel dimension
-    norm_pred = tf.reshape(norm_pred, norm_pred.shape + tuple([1]))
+    # norm_pred = tf.reshape(norm_pred, norm_pred.shape + tuple([1]))
 
     # Remove the background losses
     norm_pred = tf.multiply(norm_pred, foreground_mask_patch)
