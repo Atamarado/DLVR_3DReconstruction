@@ -41,6 +41,30 @@ class DataGenerator(tf.keras.utils.Sequence):
         img = Image.open(os.path.join(self.imagePath, name+".tiff"))
         return np.array(img)
     
+    def __calculate_foreground(self, img_batch: np.ndarray) -> np.ndarray:
+        """
+            Assuming imgs has shape (n, h, w, 3)
+        """
+        zero_bool = img_batch[:, :, :] == [0., 0., 0.]
+        n_zeros = zero_bool.sum(axis=3, keepdims=True)
+        foreground = (n_zeros != 3).astype(np.float32)
+
+        assert foreground.shape == (
+            img_batch.shape[0], img_batch.shape[1], img_batch.shape[2], 1)
+
+        return foreground
+
+    def __normalize_depth(self, depth_batch: np.ndarray) -> np.ndarray:
+        # Calculate average depth of each depth map
+        mean_depth_per_batch = depth_batch.mean(axis=(1, 2, 3), keepdims=True)
+
+        # Subtract it from each depth map (broadcasting)
+        zero_mean_depth_batch = depth_batch - mean_depth_per_batch
+
+        assert zero_mean_depth_batch.shape == depth_batch.shape
+
+        return zero_mean_depth_batch
+
     def __get_data(self, batches):
         # Generates data containing batch_size samples
         X_batch = np.asarray([self.__get_input(name) for name in batches])
@@ -50,8 +74,14 @@ class DataGenerator(tf.keras.utils.Sequence):
         # y_batch: Dimensions: (224, 224, 4): Depth (y_batch[:, :, 0]) and normal (y_batch[:, :, 1:4]) maps
 
         if self.patching:
-            pass
-            # TODO: Implement patching functions and normalize each patch. Get foreground mask. See comment above
+            foreground_batch = self.__calculate_foreground(X_batch)
+            normalized_depth_batch = self.__normalize_depth(y_batch[:, :, :, 0])
+
+            y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=3)
+            conc = np.concatenate((X_batch, y_batch, foreground_batch), axis=3)
+
+            # conc = np.concatenate((X_batch, y_batch), axis=2)
+            # TODO: Implement patching functions. See comment above
         else:
             return X_batch, y_batch
     
