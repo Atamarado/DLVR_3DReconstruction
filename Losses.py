@@ -43,12 +43,13 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
         tf.float32: the calculated total loss of foreground pixels
     """
     # Calculate dot product of each pred pixel's and truth pixel's normal vector
-    dot_product = tf.math.reduce_sum(tf.math.multiply(pred_patch, truth_patch), axis=-1)
-    
+    dot_product = tf.math.reduce_sum(tf.math.multiply(
+        pred_patch, truth_patch), axis=-1, keepdims=True)
+
     # Calculate product of norms of each pixel's pred and truth normal vector
-    pred_patch_norms = tf.math.sqrt(tf.math.reduce_sum(tf.math.exp(pred_patch, 2), axis=-1))
-    truth_patch_norms = tf.math.sqrt(tf.math.reduce_sum(tf.math.exp(truth_patch, 2), axis=-1))
-    
+    pred_patch_norms = tf.norm(pred_patch, axis=-1, keepdims=True)
+    truth_patch_norms = tf.norm(truth_patch, axis=-1, keepdims=True)
+
     norm_product = tf.math.multiply(pred_patch_norms, truth_patch_norms)
 
     # add an epsilon to the norms to avoid zero division
@@ -63,12 +64,16 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
 
     # Multiply with 1 / pi
     arccos_ratio = tf.math.divide(arccos_ratio, pi)
-    
+
+    # Probably not needed cause of keepdims
     # add channel dimension
-    arccos_ratio = tf.reshape(arccos_ratio, arccos_ratio.shape + tuple([1]))
+    # arccos_ratio = tf.reshape(arccos_ratio, arccos_ratio.shape + tuple([1]))
 
     # Rule out the background loss
     arccos_ratio = tf.math.multiply(arccos_ratio, foreground_mask_patch)
+
+    assert tf.reduce_max(arccos_ratio) <= 1
+    assert tf.reduce_min(arccos_ratio) >= 0
 
     return tf.math.reduce_sum(arccos_ratio)
 
