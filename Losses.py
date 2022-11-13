@@ -43,11 +43,11 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
         tf.float32: the calculated total loss of foreground pixels
     """
     # Calculate dot product of each pred pixel's and truth pixel's normal vector
-    dot_product = tf.math.reduce_sum(tf.math.multiply(pred_patch, truth_patch), axis=2)
+    dot_product = tf.math.reduce_sum(tf.math.multiply(pred_patch, truth_patch), axis=-1)
     
     # Calculate product of norms of each pixel's pred and truth normal vector
-    pred_patch_norms = tf.math.sqrt(tf.math.reduce_sum(tf.math.exp(pred_patch, 2), axis=2))
-    truth_patch_norms = tf.math.sqrt(tf.math.reduce_sum(tf.math.exp(truth_patch, 2), axis=2))
+    pred_patch_norms = tf.math.sqrt(tf.math.reduce_sum(tf.math.exp(pred_patch, 2), axis=-1))
+    truth_patch_norms = tf.math.sqrt(tf.math.reduce_sum(tf.math.exp(truth_patch, 2), axis=-1))
     
     norm_product = tf.math.multiply(pred_patch_norms, truth_patch_norms)
 
@@ -63,6 +63,9 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
 
     # Multiply with 1 / pi
     arccos_ratio = tf.math.divide(arccos_ratio, pi)
+    
+    # add channel dimension
+    arccos_ratio = tf.reshape(arccos_ratio, arccos_ratio.shape + tuple([1]))
 
     # Rule out the background loss
     arccos_ratio = tf.math.multiply(arccos_ratio, foreground_mask_patch)
@@ -81,13 +84,16 @@ def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.f
     """
 
     # Calculate the norm of the predicted normal vectors
-    norm_pred = tf.math.reduce_sum(tf.math.sqrt(tf.math.exp(pred_patch, 2)), axis=2)
+    norm_pred = tf.math.reduce_sum(tf.math.sqrt(tf.math.exp(pred_patch, 2)), axis=-1)
 
     # Divide one (the incentive is to create unit length normals)
     norm_pred = norm_pred - 1
 
     # Square it
     norm_pred = tf.math.exp(norm_pred, 2)
+    
+    # add channel dimension
+    norm_pred = tf.reshape(norm_pred, norm_pred.shape + tuple([1]))
 
     # Remove the background losses
     norm_pred = tf.multiply(norm_pred, foreground_mask_patch)

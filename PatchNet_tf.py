@@ -10,7 +10,7 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D,
 from tensorflow.keras.optimizers import Adam
 from Patching import patching, tensor_patching
 from Stitching import feature_map_stitching, depth_map_stitching, normals_map_stitching
-from Losses import mean_squared_error
+from Losses import prediction_loss, mean_squared_error
 from matplotlib import pyplot as plt
 
 class ConvLayer(tf.Module):
@@ -128,17 +128,15 @@ class PatchNet(tf.Module):
         return depth_map, normals_map
     
     # this is more pseudocode currently
-    def step(self, x, depth_map, normals_map):
+    def training_step(self, x, foreground_map, depth_map, normals_map):
         with tf.GradientTape(persistent = True) as tape:
             pred_depth_map, pred_normals_map = self(x)
-            depth_loss = mean_squared_error(depth_map, pred_depth_map[:,:,:,0]) # INSERT correct loss function here
-            normals_loss = None # INSERT correct loss function here
-            overall_loss = 0.5 * depth_loss #+ 0.5 * normals_loss
-        parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables #+ self.normals_decoder.trainable_variables
-        grads = tape.gradient(overall_loss, parameters)
+            loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+        parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
+        grads = tape.gradient(loss, parameters)
         self.opt.apply_gradients(zip(grads, parameters))
+        return loss
         
-    
     def forward_image(self, img, print_maps = True):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
         n_patches = len(patches)
@@ -153,13 +151,13 @@ class PatchNet(tf.Module):
         return pred_depth_map, pred_normals_map
         
     # method for feeding a whole picture and 
-    def evaluate_on_image(self, img, depth_map, normals_map, print_maps = True):
+    def evaluate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = True):
         pred_depth_map, pred_normals_map = self.forward_image(img, print_maps)
-        # compute the loss (EDIT THIS to use the correct loss)
-        depth_loss = mean_squared_error(depth_map, pred_depth_map)
-        normals_loss = None
-        overall_loss = 0.5 * depth_loss # + 0.5 * normals_loss
-        return overall_loss
+        # cast to correct float format
+        pred_depth_map = tf.cast(pred_depth_map, dtype = "float32")
+        pred_normals_map = tf.cast(pred_normals_map, dtype = "float32")
+        # compute the loss 
+        return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
         
 # Implement decoder
