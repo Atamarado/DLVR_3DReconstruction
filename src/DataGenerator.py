@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 import numpy as np
 from PIL import Image
+from patch.Patching import tensor_patching
 
 # Inspired by: https://medium.com/analytics-vidhya/write-your-own-custom-data-generator-for-tensorflow-keras-1252b64e41c3
 class DataGenerator(tf.keras.utils.Sequence):
@@ -76,14 +77,18 @@ class DataGenerator(tf.keras.utils.Sequence):
         if self.patching:
             foreground_batch = self.__calculate_foreground(X_batch)
             normalized_depth_batch = self.__normalize_depth(y_batch[:, :, :, 0])
+            
+            # Shall we normalize normal maps
 
             y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=3)
             conc = np.concatenate((X_batch, y_batch, foreground_batch), axis=3)
 
             # conc = np.concatenate((X_batch, y_batch), axis=2)
-            # TODO: Implement patching functions. See comment above
-        else:
-            return X_batch, y_batch
+            # TODO: Implement patching functions. Check if that's alright
+            X_batch, _, _ = tensor_patching(X_batch, self.patch_size)
+            y_batch, _, _ = tensor_patching(y_batch, self.patch_size)
+
+        return X_batch, y_batch
     
     def __get_output(self, name):
         depth = np.load(os.path.join(self.depthPath, name+".npz"))
