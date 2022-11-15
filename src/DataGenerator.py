@@ -61,7 +61,8 @@ class DataGenerator(tf.keras.utils.Sequence):
 
     def __normalize_depth__(self, depth_batch: np.ndarray) -> np.ndarray:
         # Calculate average depth of each depth map
-        mean_depth_per_batch = depth_batch.mean(axis=(1, 2, 3), keepdims=True)
+        mean_over_axis = tuple(range(1, len(depth_batch.shape)))
+        mean_depth_per_batch = depth_batch.mean(axis = mean_over_axis, keepdims=True)
 
         # Subtract it from each depth map (broadcasting)
         zero_mean_depth_batch = depth_batch - mean_depth_per_batch
@@ -75,31 +76,32 @@ class DataGenerator(tf.keras.utils.Sequence):
         X_batch = [self.__get_input__(name) for name in batches]
         y_batch = [self.__get_output__(name) for name in batches]
 
-        # X_batch: Dimensions: (224, 224, 3): The base image in RGB. Range (0, 255)
-        # y_batch: Dimensions: (224, 224, 4): Depth (y_batch[:, :, 0]) and normal (y_batch[:, :, 1:4]) maps
+        # X_batch: List of elements with (224, 224, 3): The base image in RGB. Range (0, 255)
+        # y_batch: List of elements with (224, 224, 4): Depth (y_batch[:, :, 0]) and normal (y_batch[:, :, 1:4]) maps
+        
+        # compute the forgrounds and add them to X_batch
+        foregrounds = [self.__calculate_foreground__(batch) for batch in X_batch]
+        for i in range(len(X_batch)):
+            X_batch[i] = np.concatenate((X_batch[i], foregrounds[i]), axis = -1)
 
         if self.patching:
-            foreground_batch = self.__calculate_foreground__(X_batch)
+            X_patched = tf.zeros((0, self.patch_size, self.patch_size, 4))
+            y_patched = tf.zeros((0, self.patch_size, self.patch_size, 4))
+            for i in range(len(batches)):
+                X_patched_i, _, _ = tensor_patching(X_batch[i], self.patch_size)
+                y_patched_i, _, _ = tensor_patching(y_batch[i], self.patch_size)
+                X_patched = tf.concat((X_patched, tf.cast(X_patched_i, dtype = "float32")), axis = 0)
+                y_patched = tf.concat((y_patched, tf.cast(y_patched_i, dtype = "float32")), axis = 0)
+            # we can now simply overwrite the batch variables
+            X_batch = X_patched 
+            y_batch = np.array(y_patched)
+            # normalize the depth map
             depth_batch = np.reshape(y_batch[:, :, :, 0], y_batch.shape[:-1] + tuple([1]))
             normalized_depth_batch = self.__normalize_depth__(depth_batch)
-            
-            # Shall we normalize normal maps
-
-            y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=3)
-            conc = np.concatenate((X_batch, y_batch, foreground_batch), axis=3)
-
-            # conc = np.concatenate((X_batch, y_batch), axis=2)
-            # TODO: Implement patching functions. Check if that's alright
-            X_batch, _, _ = tensor_patching(X_batch, self.patch_size)
-            y_batch, _, _ = tensor_patching(y_batch, self.patch_size)
+            # concatenate back together
+            y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=-1)
+            y_batch = tf.convert_to_tensor(y_batch)
         
-        else:
-            # compute the forgrounds and add them to X_batch
-            foregrounds = [self.__calculate_foreground__(batch) for batch in X_batch]
-            for i in range(len(X_batch)):
-                X_batch[i] = np.concatenate((X_batch[i], foregrounds[i]), axis = -1)
-
-
         return X_batch, y_batch
     
     def __get_output__(self, name):
