@@ -6,6 +6,6 @@ data_path = "C:\\Users\\xZoCk\\DLVR_3DReconstruction\\preprocess\\data\\pnData\\
 os.chdir(data_path)
 
 if __name__ == "__main__":
-    datagen = DataGenerator(data_path, 32, patching=True)
+    datagen = DataGenerator(data_path, 32, patching=False)
     X_batch, y_batch = datagen.__getitem__(1)
     

@@ -4,9 +4,9 @@ Created on Thu Nov 10 11:02:17 2022
 
 @author: Marc Johler
 """
-from PatchNet_tf import PatchNet
-from Patching import tensor_patching
-from Stitching import depth_map_stitching, normals_map_stitching, normalize_predictions
+from patch.PatchNet_tf import PatchNet
+from patch.Patching import tensor_patching
+from patch.Stitching import depth_map_stitching, normals_map_stitching, normalize_predictions
 import cv2
 import tensorflow as tf
 import numpy as np
@@ -17,8 +17,8 @@ patch_size = 128
 min_channels = 8
 
 # load images
-car = cv2.imread("examples\\car.png")
-plane = cv2.imread("examples\\plane.png")
+car = cv2.imread("patch\\examples\\car.png")
+plane = cv2.imread("patch\\examples\\plane.png")
 
 car = tf.convert_to_tensor(car)
 plane = tf.convert_to_tensor(plane)

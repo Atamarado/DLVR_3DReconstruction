@@ -82,7 +82,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         # compute the forgrounds and add them to X_batch
         foregrounds = [self.__calculate_foreground__(batch) for batch in X_batch]
         for i in range(len(X_batch)):
-            X_batch[i] = np.concatenate((X_batch[i], foregrounds[i]), axis = -1)
+            X_batch[i] = tf.concat((X_batch[i], foregrounds[i]), axis = -1)
 
         if self.patching:
             X_patched = tf.zeros((0, self.patch_size, self.patch_size, 4))
@@ -114,12 +114,15 @@ class DataGenerator(tf.keras.utils.Sequence):
         # Concatenate both arrays. We need to reshape depth from (w x h) to (w x h x 1)
         depth = np.reshape(depth, (np.shape(depth)[0], np.shape(depth)[1], 1))
         conc = np.concatenate((depth, normal), axis=2)
-        return conc
+        return tf.convert_to_tensor(conc)
 
     def __getitem__(self, index):
+        # assert that the index is lower than the maximum number of batches
+        assert index < self.__len__()
+        
         batches = self.objs[index * self.batch_size:(index + 1) * self.batch_size]
         X, y = self.__get_data__(batches)
         return X, y
     
     def __len__(self):
-        return self.n // self.batch_size
+        return int(self.n // self.batch_size)

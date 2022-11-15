@@ -8,10 +8,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D
 from tensorflow.keras.optimizers import Adam
-from Patching import patching, tensor_patching
-from Stitching import feature_map_stitching, depth_map_stitching, normals_map_stitching
-from Losses import prediction_loss, mean_squared_error
 from matplotlib import pyplot as plt
+from patch.Patching import patching, tensor_patching
+from patch.Stitching import feature_map_stitching, depth_map_stitching, normals_map_stitching
+from patch.Losses import prediction_loss, mean_squared_error
 
 class ConvLayer(tf.Module):
     def __init__(self, out_channels, name = "ConvLayer"):
