@@ -17,8 +17,8 @@ patch_size = 128
 min_channels = 8
 
 # load images
-car = cv2.imread("Pixel2Mesh\\Data\\examples\\car.png")
-plane = cv2.imread("Pixel2Mesh\\Data\\examples\\plane.png")
+car = cv2.imread("examples\\car.png")
+plane = cv2.imread("examples\\plane.png")
 
 car = tf.convert_to_tensor(car)
 plane = tf.convert_to_tensor(plane)
@@ -51,10 +51,10 @@ foreground_patches, _, _ = tensor_patching(foreground, patch_size)
 foreground_patches = tf.cast(foreground_patches, dtype = "float32")
 
 # do the training
-for iteration in range(30):
-    patchnet.training_step(patches, foreground_patches, true_depth_map, true_normals_map)
-    if iteration % 10 == 0:
-        print(iteration, " done")
+for iteration in range(200):
+    loss = patchnet.training_step(patches, foreground_patches, true_depth_map, true_normals_map)
+    if (iteration + 1) % 5 == 0:
+        print(iteration + 1, " done. Loss: ", loss)
 
 # after training compute the depth_maps again, stitch them together and evaluate based on the whole picture
 true_depth_map = tf.cast(car[:,:,0], dtype = "float32")

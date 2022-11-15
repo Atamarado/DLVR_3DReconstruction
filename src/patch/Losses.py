@@ -30,7 +30,7 @@ def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_pa
     abs_diff: tf.Tensor
     abs_diff = tf.math.abs(tf.math.subtract(truth_patch, pred_patch))
     abs_diff = tf.math.multiply(abs_diff, foreground_mask_patch)
-    return tf.math.reduce_sum(abs_diff) 
+    return tf.math.reduce_sum(abs_diff) / tf.math.reduce_sum(foreground_mask_patch)
 
 def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
     """Calculate the linearized version of the cosine similarity of the predicted normals
@@ -145,5 +145,5 @@ def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_no
     # Calculate the two losses
     loss_depth = depth_loss(pred_depth_patch, depth_patch, foreground_mask_patch)
     loss_normal = normal_loss(pred_normal_patch, normal_patch, foreground_mask_patch)
-
+    
     return loss_depth + loss_normal

@@ -135,15 +135,10 @@ class PatchNet(tf.Module):
         parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
         grads = tape.gradient(loss, parameters)
         
-        grad_max = 0
-        grad_min = 0
-        
-        tmp = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
-        
         self.opt.apply_gradients(zip(grads, parameters))
         return loss
         
-    def forward_image(self, img, print_maps = True):
+    def forward_image(self, img, foreground_map, print_maps = True):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
         n_patches = len(patches)
         # forward pass
@@ -152,13 +147,13 @@ class PatchNet(tf.Module):
         pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals)
         pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
         if print_maps:
-            plt.imshow(pred_depth_map)
+            plt.imshow(tf.cast(pred_depth_map, dtype="float32") * foreground_map[:,:,0])
             #plt.imshow(normals_maps)
         return pred_depth_map, pred_normals_map
         
     # method for feeding a whole picture and 
     def evaluate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = True):
-        pred_depth_map, pred_normals_map = self.forward_image(img, print_maps)
+        pred_depth_map, pred_normals_map = self.forward_image(img, foreground_map, print_maps)
         # cast to correct float format
         pred_depth_map = tf.cast(pred_depth_map, dtype = "float32")
         pred_normals_map = tf.cast(pred_normals_map, dtype = "float32")
@@ -179,7 +174,7 @@ class DLVR_net(tf.Module):
         # delete this after decoder has been implemented
         self.min_channels = min_channels
         # optimizer
-        self.opt = Adam()
+        self.opt = Adam(learning_rate = 0.0000001)
     
     def __call__(self, x):
         patches, n_height, n_width = patching(x, self.patch_size, return_intervals = False)

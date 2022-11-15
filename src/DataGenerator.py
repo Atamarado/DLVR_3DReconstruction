@@ -38,11 +38,11 @@ class DataGenerator(tf.keras.utils.Sequence):
     def on_epoch_end(self):
         pass
     
-    def __get_input(self, name):
+    def __get_input__(self, name):
         img = Image.open(os.path.join(self.imagePath, name+".tiff"))
         return np.array(img)
     
-    def __calculate_foreground(self, img_batch: np.ndarray) -> np.ndarray:
+    def __calculate_foreground__(self, img_batch: np.ndarray) -> np.ndarray:
         """
             Assuming imgs has shape (n, h, w, 3)
         """
@@ -55,7 +55,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         return foreground
 
-    def __normalize_depth(self, depth_batch: np.ndarray) -> np.ndarray:
+    def __normalize_depth__(self, depth_batch: np.ndarray) -> np.ndarray:
         # Calculate average depth of each depth map
         mean_depth_per_batch = depth_batch.mean(axis=(1, 2, 3), keepdims=True)
 
@@ -66,17 +66,18 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         return zero_mean_depth_batch
 
-    def __get_data(self, batches):
+    def __get_data__(self, batches):
         # Generates data containing batch_size samples
-        X_batch = np.asarray([self.__get_input(name) for name in batches])
-        y_batch = np.asarray([self.__get_output(name) for name in batches])
+        X_batch = np.asarray([self.__get_input__(name) for name in batches])
+        y_batch = np.asarray([self.__get_output__(name) for name in batches])
 
         # X_batch: Dimensions: (224, 224, 3): The base image in RGB. Range (0, 255)
         # y_batch: Dimensions: (224, 224, 4): Depth (y_batch[:, :, 0]) and normal (y_batch[:, :, 1:4]) maps
 
         if self.patching:
-            foreground_batch = self.__calculate_foreground(X_batch)
-            normalized_depth_batch = self.__normalize_depth(y_batch[:, :, :, 0])
+            foreground_batch = self.__calculate_foreground__(X_batch)
+            depth_batch = np.reshape(y_batch[:, :, :, 0], y_batch.shape[:-1] + tuple([1]))
+            normalized_depth_batch = self.__normalize_depth__(depth_batch)
             
             # Shall we normalize normal maps
 
@@ -90,7 +91,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         return X_batch, y_batch
     
-    def __get_output(self, name):
+    def __get_output__(self, name):
         depth = np.load(os.path.join(self.depthPath, name+".npz"))
         normal = np.load(os.path.join(self.normalPath, name+".npz"))
 
@@ -104,7 +105,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
     def __getitem__(self, index):
         batches = self.objs[index * self.batch_size:(index + 1) * self.batch_size]
-        X, y = self.__get_data(batches)
+        X, y = self.__get_data__(batches)
         return X, y
     
     def __len__(self):
