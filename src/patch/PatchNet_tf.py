@@ -116,7 +116,7 @@ class PatchNet(tf.Module):
         self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
         self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
         # initialize optimizer
-        self.opt = Adam()
+        self.opt = Adam(learning_rate = 0.0001)
         # save patch size for later usage
         self.patch_size = patch_size
     
@@ -147,7 +147,7 @@ class PatchNet(tf.Module):
         pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals)
         pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
         if print_maps:
-            plt.imshow(tf.cast(pred_depth_map, dtype="float32") * foreground_map[:,:,0])
+            plt.imshow(tf.cast(pred_depth_map, dtype="float32") * foreground_map)
             #plt.imshow(normals_maps)
         return pred_depth_map, pred_normals_map
         
@@ -173,8 +173,6 @@ class DLVR_net(tf.Module):
         self.decoder = None # add the decoder part here 
         # delete this after decoder has been implemented
         self.min_channels = min_channels
-        # optimizer
-        self.opt = Adam(learning_rate = 0.0000001)
     
     def __call__(self, x):
         patches, n_height, n_width = patching(x, self.patch_size, return_intervals = False)

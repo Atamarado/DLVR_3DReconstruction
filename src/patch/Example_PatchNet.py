@@ -62,7 +62,7 @@ true_depth_map = tf.cast(car[:,:,0], dtype = "float32")
 true_depth_map = tf.reshape(true_depth_map, true_depth_map.shape + tuple([1]))
 # create normals map
 true_normals_map = tf.cast(car, dtype = "float32")
-true_normals_map = tf.reshape(true_normals_map,  tuple([1]) + true_normals_map.shape)
-true_normals_map = normalize_predictions(true_normals_map)
+true_normals_map = tf.reshape(true_normals_map,  true_normals_map.shape)
+true_normals_map = normalize_predictions(np.reshape(true_normals_map, tuple([1]) + true_normals_map.shape))
 
 valuation_loss = patchnet.evaluate_on_image(car, foreground, true_depth_map, true_normals_map)

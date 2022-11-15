@@ -11,7 +11,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                  path,
                  batch_size,
                  shuffle=True,
-                 seed = random.random(),
+                 seed = 123456789,
                  validation=False,
                  train_val_split=0.2,
                  patching=True,
@@ -49,12 +49,13 @@ class DataGenerator(tf.keras.utils.Sequence):
         """
             Assuming imgs has shape (n, h, w, 3)
         """
-        zero_bool = img_batch[:, :, :] == [0., 0., 0.]
-        n_zeros = zero_bool.sum(axis=3, keepdims=True)
+        zero_bool = np.array(img_batch == 0)
+        n_zeros = zero_bool.sum(axis=-1, keepdims=True)
         foreground = (n_zeros != 3).astype(np.float32)
 
-        assert foreground.shape == (
-            img_batch.shape[0], img_batch.shape[1], img_batch.shape[2], 1)
+        # This is not beneficial if we want to create the foreground match for single images
+        #assert foreground.shape == (
+            #img_batch.shape[0], img_batch.shape[1], img_batch.shape[2], 1)
 
         return foreground
 
@@ -71,8 +72,8 @@ class DataGenerator(tf.keras.utils.Sequence):
 
     def __get_data__(self, batches):
         # Generates data containing batch_size samples
-        X_batch = np.asarray([self.__get_input__(name) for name in batches])
-        y_batch = np.asarray([self.__get_output__(name) for name in batches])
+        X_batch = [self.__get_input__(name) for name in batches]
+        y_batch = [self.__get_output__(name) for name in batches]
 
         # X_batch: Dimensions: (224, 224, 3): The base image in RGB. Range (0, 255)
         # y_batch: Dimensions: (224, 224, 4): Depth (y_batch[:, :, 0]) and normal (y_batch[:, :, 1:4]) maps
@@ -91,6 +92,13 @@ class DataGenerator(tf.keras.utils.Sequence):
             # TODO: Implement patching functions. Check if that's alright
             X_batch, _, _ = tensor_patching(X_batch, self.patch_size)
             y_batch, _, _ = tensor_patching(y_batch, self.patch_size)
+        
+        else:
+            # compute the forgrounds and add them to X_batch
+            foregrounds = [self.__calculate_foreground__(batch) for batch in X_batch]
+            for i in range(len(X_batch)):
+                X_batch[i] = np.concatenate((X_batch[i], foregrounds[i]), axis = -1)
+
 
         return X_batch, y_batch
     

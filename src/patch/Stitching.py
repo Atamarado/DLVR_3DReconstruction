@@ -127,7 +127,8 @@ def depth_map_stitching(image_shape, patches, height_intervals, width_intervals,
         denominators[height_interval[0]:height_interval[1], 
                      width_interval[0]:width_interval[1]] += 1
     # return depth_map for the whole image
-    return tf.convert_to_tensor(image_depth_map / denominators)
+    image_depth_map = np.reshape(image_depth_map / denominators, image_depth_map.shape + tuple([1]))
+    return tf.convert_to_tensor(image_depth_map)
 
 
 def normalize_predictions(patches):
@@ -157,7 +158,8 @@ def normals_map_stitching(image_shape, patches, height_intervals, width_interval
         denominators[height_interval[0]:height_interval[1], 
                      width_interval[0]:width_interval[1]] += 1
     # normalize the average normals map again
-    average_normals = np.reshape(normals_map / denominators, tuple([1]) + image_shape)
+    average_normals = normals_map / denominators
+    average_normals = np.reshape(average_normals, tuple([1]) + average_normals.shape)
     return normalize_predictions(average_normals)[0]
 
 
