@@ -6,7 +6,7 @@ Created on Thu Nov 10 11:02:17 2022
 """
 from PatchNet_tf import PatchNet
 from Patching import tensor_patching
-from Stitching import depth_map_stitching, normals_map_stitching
+from Stitching import depth_map_stitching, normals_map_stitching, normalize_predictions
 import cv2
 import tensorflow as tf
 import numpy as np
@@ -41,13 +41,17 @@ foreground = tf.reshape(foreground, car.shape[:-1] + tuple([1]))
 true_depth_map  = tf.cast(patches[:,:,:,0], dtype = "float32")
 # add channel dimension to depth map
 true_depth_map = tf.reshape(true_depth_map, true_depth_map.shape + tuple([1]))
+# create normals map
 true_normals_map = tf.cast(patches, dtype = "float32")
+# normalize it to have maximum values of one
+true_normals_map = normalize_predictions(true_normals_map)
+# generate foreground maps for patches
 foreground_patches, _, _ = tensor_patching(foreground, patch_size)
 # cast to "float32"
 foreground_patches = tf.cast(foreground_patches, dtype = "float32")
 
 # do the training
-for iteration in range(1):
+for iteration in range(30):
     patchnet.training_step(patches, foreground_patches, true_depth_map, true_normals_map)
     if iteration % 10 == 0:
         print(iteration, " done")
@@ -56,5 +60,9 @@ for iteration in range(1):
 true_depth_map = tf.cast(car[:,:,0], dtype = "float32")
 # add channel dimension to depth map
 true_depth_map = tf.reshape(true_depth_map, true_depth_map.shape + tuple([1]))
+# create normals map
 true_normals_map = tf.cast(car, dtype = "float32")
+true_normals_map = tf.reshape(true_normals_map,  tuple([1]) + true_normals_map.shape)
+true_normals_map = normalize_predictions(true_normals_map)
+
 valuation_loss = patchnet.evaluate_on_image(car, foreground, true_depth_map, true_normals_map)

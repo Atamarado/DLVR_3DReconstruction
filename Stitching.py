@@ -135,6 +135,8 @@ def normalize_predictions(patches):
     for i in range(len(normalized_patches)):
         normalize_with = np.reshape(np.sum(normalized_patches[i]**2, axis = -1)**(0.5),
                                     (patches.shape[1], patches.shape[2], 1))
+        # exception handling to avoid zero division errors
+        normalize_with[np.where(normalize_with == 0)] = 1
         normalized_patches[i] = normalized_patches[i] / normalize_with
     return tf.convert_to_tensor(normalized_patches)
 
