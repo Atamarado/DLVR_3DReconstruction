@@ -55,35 +55,6 @@ def main():
                 for file in testList:
                     shutil.copy(os.path.join(powPath, file), baseTestDestPath+re.sub(".*_", "_", file))  
 
-                # # For each file in the filelist
-                # if iType == "images":
-                #     for file in fileList:
-                #         img = Image.open(os.path.join(powPath, file))
-                #         imarray = np.array(img)/255
-                #         patchList = np.array([
-                #             imarray[:PATCH_SIZE, :PATCH_SIZE],
-                #             imarray[:PATCH_SIZE, -PATCH_SIZE:],
-                #             imarray[-PATCH_SIZE:, :PATCH_SIZE],
-                #             imarray[-PATCH_SIZE:, -PATCH_SIZE:]
-                #         ])
-                #         np.save(baseDestPath+file.replace(".tiff", "").replace("rgb"), patchList)
-                #
-                # elif iType == "depth_maps":
-                #     for file in fileList:
-                #         map = np.load(os.path.join(powPath, file))
-                #         map = map.f.depth
-                #         np.save(baseDestPath + file.replace(".npz", ""), map)
-                #
-                #         # Patch images here and on normal maps too
-                # else:
-                #     for file in fileList:
-                #         map = np.load(os.path.join(powPath, file))
-                #         map = map.f.normals
-                #         np.save(baseDestPath + file.replace(".npz", ""), map)
-
-    # depth = np.load("data/textureless_deformable_surfaces/cloth/depth_maps/Lc_left_edge/depth_0051.npz")
-    # print("Hola")
-
 
 if __name__=="__main__":
     main()
