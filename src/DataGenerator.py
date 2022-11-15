@@ -3,6 +3,7 @@ import os
 import numpy as np
 from PIL import Image
 from patch.Patching import tensor_patching
+import random
 
 # Inspired by: https://medium.com/analytics-vidhya/write-your-own-custom-data-generator-for-tensorflow-keras-1252b64e41c3
 class DataGenerator(tf.keras.utils.Sequence):
@@ -10,6 +11,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                  path,
                  batch_size,
                  shuffle=True,
+                 seed = random.random(),
                  validation=False,
                  train_val_split=0.2,
                  patching=True,
@@ -27,6 +29,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         
         self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.imagePath)]
         if shuffle:
+            np.random.seed(seed)
             np.random.shuffle(self.objs)
 
         n_objs = len(self.objs)
