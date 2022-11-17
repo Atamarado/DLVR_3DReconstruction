@@ -145,7 +145,6 @@ class PatchNet(tf.Module):
         
     def forward_image(self, img, foreground_map, print_maps = True):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
-        n_patches = len(patches)
         # forward pass
         depth_maps, normals_maps = self(patches)
         # stitch the maps together
@@ -162,8 +161,14 @@ class PatchNet(tf.Module):
         # cast to correct float format
         pred_depth_map = tf.cast(pred_depth_map, dtype = "float32")
         pred_normals_map = tf.cast(pred_normals_map, dtype = "float32")
+        # only consider foreground pixels
+        depth_map_fg = depth_map * foreground_map
+        pred_depth_map_fg = pred_depth_map * foreground_map
+        # normalize the depth maps
+        depth_map_fg = depth_map_fg - tf.reduce_mean(depth_map_fg)
+        pred_depth_map_fg = pred_depth_map_fg - tf.reduce_mean(pred_depth_map_fg)
         # compute the loss 
-        return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+        return prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, normals_map, foreground_map)
         
         
 # Implement decoder
