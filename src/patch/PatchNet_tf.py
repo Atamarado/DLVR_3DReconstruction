@@ -128,12 +128,14 @@ class PatchNet(tf.Module):
         return depth_map, normals_map
     
     def training_step(self, x, foreground_map, depth_map, normals_map):
-        with tf.GradientTape(persistent = True) as tape:
+        with tf.GradientTape(persistent = False) as tape:
             pred_depth_map, pred_normals_map = self(x)
-            #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
             loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+    
         parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
         grads = tape.gradient(loss, parameters)
+        
+        loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
         self.opt.apply_gradients(zip(grads, parameters))
         return loss

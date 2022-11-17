@@ -8,6 +8,7 @@ Created on Thu Nov 17 13:46:53 2022
 import math
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 
 def patch_loop(model, data_generator, validation = False, n_batches = math.inf):
     # set the options for the data generator
@@ -16,8 +17,13 @@ def patch_loop(model, data_generator, validation = False, n_batches = math.inf):
     n_batches = np.min([data_generator.__len__(), n_batches])
     total_patches = 0
     loss = 0
+    # description for progress bar
+    if validation:
+        desc = "Validation progress (patches)"
+    else:
+        desc = "Training progress"
     # loop over the data
-    for i in range(n_batches): # TO-DO: replace 10 with n_batches for final training loop
+    for i in tqdm(range(n_batches), desc = desc): # TO-DO: replace 10 with n_batches for final training loop
         inputs, maps = data_generator.__getitem__(i)
         patches = inputs[:,:,:,0:3]
         foreground_map = tf.reshape(inputs[:,:,:,3], inputs.shape[:-1] + tuple([1]))
@@ -41,7 +47,7 @@ def image_loop(model, data_generator, n_batches):
     batch_size = data_generator.batch_size
     loss = 0
     # loop over all images
-    for i in range(n_batches):
+    for i in tqdm(range(n_batches), desc = "Validation progress (images)"):
         inputs, maps = data_generator.__getitem__(i)
         n_images = len(inputs)
         for j in range(n_images):

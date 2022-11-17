@@ -71,10 +71,10 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
 
     # Rule out the background loss
     arccos_ratio = tf.math.multiply(arccos_ratio, foreground_mask_patch)
-
+    
     assert tf.reduce_max(arccos_ratio) <= 1
     assert tf.reduce_min(arccos_ratio) >= 0
-
+    
     return tf.math.reduce_sum(arccos_ratio)
 
 def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
