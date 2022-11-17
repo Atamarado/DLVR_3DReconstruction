@@ -18,7 +18,7 @@ from matplotlib import pyplot as plt
 patch_size = 128
 min_channels = 8
 batch_size = 32
-train_path = "C:\\Users\\xZoCk\\DLVR_3DReconstruction\\preprocess\\data\\pnData\\train"
+train_path = "preprocess\\data\\pnData\\train"
 
 # train process happens as follows
 patchnet = PatchNet(patch_size, min_channels)
@@ -27,7 +27,7 @@ patchnet = PatchNet(patch_size, min_channels)
 for epoch in range(1):
     datagen = DataGenerator(train_path, batch_size, patching = True, patch_size = patch_size)
     n_batches = datagen.__len__()
-    for i in range(n_batches):
+    for i in range(50):
         inputs, maps = datagen.__getitem__(i)
         patches = inputs[:,:,:,0:3]
         foreground = tf.reshape(inputs[:,:,:,3], inputs.shape[:-1] + tuple([1]))
@@ -37,7 +37,7 @@ for epoch in range(1):
         print("batch ", i, " done. Loss: ", loss)
         
 
-test_path = "C:\\Users\\xZoCk\\DLVR_3DReconstruction\\preprocess\\data\\pnData\\test"
+test_path = "preprocess\\data\\pnData\\test"
 
 datagen_test = DataGenerator(test_path, 1, patching = False, patch_size = patch_size)
 
