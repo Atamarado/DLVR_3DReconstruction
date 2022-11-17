@@ -137,6 +137,11 @@ class PatchNet(tf.Module):
         
         self.opt.apply_gradients(zip(grads, parameters))
         return loss
+    
+    def validation_step(self, x, foreground_map, depth_map, normals_map):
+        pred_depth_map, pred_normals_map = self(x)
+        #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
+        return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
     def forward_image(self, img, foreground_map, print_maps = True):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
@@ -152,7 +157,7 @@ class PatchNet(tf.Module):
         return pred_depth_map, pred_normals_map
         
     # method for feeding a whole picture and 
-    def evaluate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = True):
+    def validate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = True):
         pred_depth_map, pred_normals_map = self.forward_image(img, foreground_map, print_maps)
         # cast to correct float format
         pred_depth_map = tf.cast(pred_depth_map, dtype = "float32")

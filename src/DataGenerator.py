@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from patch.Patching import tensor_patching
 import random
+import numpy as np
 
 # Inspired by: https://medium.com/analytics-vidhya/write-your-own-custom-data-generator-for-tensorflow-keras-1252b64e41c3
 class DataGenerator(tf.keras.utils.Sequence):
@@ -27,20 +28,38 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.depthPath = os.path.join(path, 'depth_maps/')
         self.normalPath = os.path.join(path, 'normals/')
         
+        
         self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.imagePath)]
         if shuffle:
             np.random.seed(seed)
             np.random.shuffle(self.objs)
 
         n_objs = len(self.objs)
-        if validation:
-            self.n = n_objs * train_val_split
-        else:
-            self.n = n_objs * (1.0-train_val_split)
+        
+        self.n_train = int(np.floor(n_objs * (1 - train_val_split)))
+        self.n_val = n_objs - self.n_train
     
     def on_epoch_end(self):
         pass
     
+    def __last_index__(self):
+        if self.validation:
+            return self.n_val + self.n_train
+        else:
+            return self.n_train
+    
+    def __train_len__(self):
+        return int(np.ceil(self.n_train / self.batch_size))
+    
+    def __val_len__(self):
+        return int(np.ceil(self.n_val / self.batch_size))
+
+    def __len__(self):
+        if self.validation:
+            return self.__val_len__()
+        else:
+            return self.__train_len__()
+
     def __get_input__(self, name):
         img = Image.open(os.path.join(self.imagePath, name+".tiff"))
         return np.array(img)
@@ -117,12 +136,24 @@ class DataGenerator(tf.keras.utils.Sequence):
         return tf.convert_to_tensor(conc)
 
     def __getitem__(self, index):
-        # assert that the index is lower than the maximum number of batches
+        # assert that the index is lower than the maximum number of training batches
         assert index < self.__len__()
         
-        batches = self.objs[index * self.batch_size:(index + 1) * self.batch_size]
+        start_index = index * self.batch_size + self.validation * self.n_train
+        end_index = (index + 1) * self.batch_size + self.validation * self.n_train
+        
+        if end_index > self.__last_index__():
+            end_index = self.__last_index__()
+            
+        batches = self.objs[start_index:end_index]
+        
         X, y = self.__get_data__(batches)
         return X, y
     
-    def __len__(self):
-        return int(self.n // self.batch_size)
+    def set_validation(self, validation):
+        self.validation = validation
+        
+    def set_patching(self, patching):
+        self.patching = patching
+        
+    
