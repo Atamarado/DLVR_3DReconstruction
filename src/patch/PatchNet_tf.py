@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from patch.Patching import patching, tensor_patching
 from patch.Stitching import feature_map_stitching, depth_map_stitching, normals_map_stitching
 from patch.Losses import prediction_loss, mean_squared_error
+import random
 
 class ConvLayer(tf.Module):
     def __init__(self, out_channels, name = "ConvLayer"):
@@ -109,6 +110,12 @@ class Decoder(tf.Module):
 
 class PatchNet(tf.Module):
     def __init__(self, patch_size, min_channels, name = "patchnet"):
+        seed = random.randint(1, 1000)
+        random.seed(seed)
+        np.random.seed(seed)
+        tf.random.set_seed(seed)
+        tf.experimental.numpy.random.seed(seed)
+        print("Tensorflow seed", seed)
         super(PatchNet, self).__init__(name)
         input_size = (3, patch_size, patch_size, 3)
         encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
