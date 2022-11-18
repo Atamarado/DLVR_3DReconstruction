@@ -14,7 +14,7 @@ epochs = 2
 patch_size = 128
 min_channels = 8
 batch_size = 32
-train_path = "preprocess\\data\\pnData\\train"
+train_path = "data\\pnData\\train"
 
 
 # train process happens as follows
@@ -25,7 +25,9 @@ datagen = DataGenerator(train_path, batch_size, patching = True, patch_size = pa
 train(patchnet, datagen, epochs, n_train_batches = 80, n_val_batches = 20)
 
 # test with test data
-#test_path = "preprocess\\data\\pnData\\test"
-#datagen_test = DataGenerator(test_path, batch_size, patching = False, train_val_split = 1.0)
+test_path = "data\\pnData\\test"
+datagen_test = DataGenerator(test_path, batch_size, patching = False, train_val_split = 1.0)
 
-#test(patchnet, datagen_test)
+test(patchnet, datagen_test, n_batches = 2)
+
+print("Finished")
