@@ -47,8 +47,10 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
         pred_patch, truth_patch), axis=-1, keepdims=True)
 
     # Calculate product of norms of each pixel's pred and truth normal vector
-    pred_patch_norms = tf.norm(pred_patch, axis=-1, keepdims=True)
-    truth_patch_norms = tf.norm(truth_patch, axis=-1, keepdims=True)
+    # pred_patch_norms = tf.norm(pred_patch, axis=-1, keepdims=True)
+    pred_patch_norms = tf.sqrt(tf.reduce_sum(tf.square(pred_patch), axis=-1, keepdims=True) + 1.0e-12)
+    # truth_patch_norms = tf.norm(truth_patch, axis=-1, keepdims=True)
+    truth_patch_norms = tf.sqrt(tf.reduce_sum(tf.square(truth_patch), axis=-1, keepdims=True) + 1.0e-12)
 
     norm_product = tf.math.multiply(pred_patch_norms, truth_patch_norms)
 
