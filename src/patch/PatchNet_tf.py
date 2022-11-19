@@ -110,7 +110,7 @@ class Decoder(tf.Module):
 
 class PatchNet(tf.Module):
     def __init__(self, patch_size, min_channels, name = "patchnet"):
-        seed = random.randint(1, 1000)
+        seed = 758
         random.seed(seed)
         np.random.seed(seed)
         tf.random.set_seed(seed)
