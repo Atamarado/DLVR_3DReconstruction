@@ -137,6 +137,8 @@ class PatchNet(tf.Module):
     def training_step(self, x, foreground_map, depth_map, normals_map):
         with tf.GradientTape(persistent = False) as tape:
             pred_depth_map, pred_normals_map = self(x)
+            if np.isnan(pred_depth_map).any():
+                print("Problem detected")
             loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
     
         parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
