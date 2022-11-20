@@ -28,7 +28,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.depthPath = os.path.join(path, 'depth_maps/')
         self.normalPath = os.path.join(path, 'normals/')
 
-        print("Seed", seed)
+        # print("Seed", seed)
         
         self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.imagePath)]
         if shuffle:
