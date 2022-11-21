@@ -12,7 +12,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                  path,
                  batch_size,
                  shuffle=True,
-                 seed = 123456789,
+                 seed = 666,
                  validation=False,
                  train_val_split=0.2,
                  patching=True,

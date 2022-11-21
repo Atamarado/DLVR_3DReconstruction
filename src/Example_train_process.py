@@ -10,7 +10,7 @@ from DataGenerator import DataGenerator
 from Feed_data import train, test
 
 #
-epochs = 2
+epochs = 10
 patch_size = 128
 min_channels = 8
 batch_size = 32
