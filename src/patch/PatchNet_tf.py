@@ -11,6 +11,7 @@ from tensorflow.keras.optimizers import Adam
 from matplotlib import pyplot as plt
 from patch.Stitching import depth_map_stitching, normals_map_stitching
 from patch.Losses import prediction_loss
+from patch.Patching import tensor_patching
 
 class ConvLayer(tf.Module):
     def __init__(self, out_channels, name = "ConvLayer"):
