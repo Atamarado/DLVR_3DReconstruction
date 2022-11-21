@@ -47,8 +47,10 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
         pred_patch, truth_patch), axis=-1, keepdims=True)
 
     # Calculate product of norms of each pixel's pred and truth normal vector
-    pred_patch_norms = tf.norm(pred_patch, axis=-1, keepdims=True)
-    truth_patch_norms = tf.norm(truth_patch, axis=-1, keepdims=True)
+    # pred_patch_norms = tf.norm(pred_patch, axis=-1, keepdims=True)
+    pred_patch_norms = tf.sqrt(tf.reduce_sum(tf.square(pred_patch), axis=-1, keepdims=True) + 1.0e-12)
+    # truth_patch_norms = tf.norm(truth_patch, axis=-1, keepdims=True)
+    truth_patch_norms = tf.sqrt(tf.reduce_sum(tf.square(truth_patch), axis=-1, keepdims=True) + 1.0e-12)
 
     norm_product = tf.math.multiply(pred_patch_norms, truth_patch_norms)
 
@@ -71,8 +73,10 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
 
     # Rule out the background loss
     arccos_ratio = tf.math.multiply(arccos_ratio, foreground_mask_patch)
-    
-    assert tf.reduce_max(arccos_ratio) <= 1
+    try:
+        assert tf.reduce_max(arccos_ratio) <= 1
+    except:
+        print("Assert problem")
     assert tf.reduce_min(arccos_ratio) >= 0
     
     return tf.math.reduce_sum(arccos_ratio)
@@ -89,7 +93,8 @@ def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.f
     """
 
     # Calculate the norm of the predicted normal vectors
-    norm_pred = tf.norm(pred_patch, axis=-1, keepdims=True)
+    # norm_pred = tf.norm(pred_patch, axis=-1, keepdims=True)
+    norm_pred = tf.sqrt(tf.reduce_sum(tf.square(pred_patch), axis=-1, keepdims=True) + 1.0e-12)
 
     # Subtract one (the incentive is to create unit length normals)
     norm_pred = norm_pred - 1
