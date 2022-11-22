@@ -3,8 +3,6 @@ import os
 import numpy as np
 from PIL import Image
 from patch.Patching import tensor_patching
-import random
-import numpy as np
 
 # Inspired by: https://medium.com/analytics-vidhya/write-your-own-custom-data-generator-for-tensorflow-keras-1252b64e41c3
 class DataGenerator(tf.keras.utils.Sequence):
