@@ -35,7 +35,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         n_objs = len(self.objs)
         
-        self.n_train = int(np.floor(n_objs * (1 - train_val_split)))
+        self.n_train = int(n_objs * (1 - train_val_split))
         self.n_val = n_objs - self.n_train
     
     def on_epoch_end(self):
