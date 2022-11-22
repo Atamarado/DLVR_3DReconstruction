@@ -12,17 +12,18 @@ from Feed_data import train, test
 #
 epochs = 2
 patch_size = 128
+fixed_overlaps = True
 min_channels = 8
 batch_size = 32
 train_path = "data\\pnData\\train"
 
-
 # train process happens as follows
-patchnet = PatchNet(patch_size, min_channels)
-datagen = DataGenerator(train_path, batch_size, patching = True, patch_size = patch_size)
+patchnet = PatchNet(patch_size, min_channels, fixed_overlaps)
+datagen = DataGenerator(train_path, batch_size, patching = True, 
+                        patch_size = patch_size, fixed_overlaps = fixed_overlaps)
 
 # use train to train patchnet
-train(patchnet, datagen, epochs, n_train_batches = 8, n_val_batches = 4)
+train(patchnet, datagen, epochs, n_train_batches = 5, n_val_batches = 5)
 
 # test with test data
 test_path = "data\\pnData\\test"

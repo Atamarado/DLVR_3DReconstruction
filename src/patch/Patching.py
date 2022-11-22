@@ -7,14 +7,9 @@ Created on Mon Oct 24 10:58:19 2022
 import numpy as np
 import tensorflow as tf
 
-def patch_matrix(img_matrix, patch_size, n_height, n_width):
+def patch_matrix(img_matrix, patch_size, n_height, n_width, height_ratio, width_ratio):
     height, width = img_matrix.shape
-    # type conversion which is necessary for Colab
-    width = int(width)
-    height = int(height)
-    # compute the number of pixels after which a new patch is necessary
-    height_ratio = height / n_height
-    width_ratio = width / n_width
+    
     # compute the cutting points
     # if there are more than one patch necessary
     height_cuts = np.array([height_ratio * i for i in range(0, n_height - 1)])
@@ -56,9 +51,7 @@ def patch_matrix(img_matrix, patch_size, n_height, n_width):
     height_intervals[-1] = np.array([height - patch_size, height])
     width_intervals[-1] = np.array([width - patch_size, width])
     
-    return patches, height_intervals, width_intervals
-    return tf.convert_to_tensor(patches), height_intervals, width_intervals
-    
+    return patches, height_intervals, width_intervals  
 
 def patching(img, patch_size, return_intervals = True):
     height, width, channels = img.shape
@@ -72,17 +65,48 @@ def patching(img, patch_size, return_intervals = True):
     n_height = int(np.ceil(float(height) / float(patch_size)))
     n_width = int(np.ceil(float(width) / float(patch_size)))
     
+    # compute the number of pixels after which a new patch is necessary
+    height_ratio = height / n_height
+    width_ratio = width / n_width
+    
     height_intervals = None
     width_intervals = None
     patches = np.repeat(None, channels)
     
     for i in range(channels):
-        patches[i], height_intervals, width_intervals = patch_matrix(img[:,:,i], patch_size, n_height, n_width)
+        patches[i], height_intervals, width_intervals = patch_matrix(img[:,:,i], patch_size, 
+                                                                     n_height, n_width, height_ratio, width_ratio)
     
     if return_intervals:
         return patches, height_intervals, width_intervals
     return patches, n_height, n_width
-        
+
+def patching_fo(img, patch_size, return_intervals = True):
+    height, width, channels = img.shape
+    
+    # weird type cast to avoid error in Colab
+    height = int(height)
+    width = int(width)
+    channels = int(channels)
+    
+    # compute number of necessary patches in each dimension
+    n_height = int(np.round((height - patch_size) * 2 / patch_size) + 1)
+    n_width = int(np.round((width - patch_size) * 2 / patch_size) + 1) 
+    
+    # compute the number of pixels after which a new patch is necessary
+    overlap = int(np.floor(patch_size / 2))
+    
+    height_intervals = None
+    width_intervals = None
+    patches = np.repeat(None, channels)
+    
+    for i in range(channels):
+        patches[i], height_intervals, width_intervals = patch_matrix(img[:,:,i], patch_size, 
+                                                                     n_height, n_width, overlap, overlap)
+    
+    if return_intervals:
+        return patches, height_intervals, width_intervals
+    return patches, n_height, n_width
 
 def patches_to_tensor(patches, patch_size):
     channels = len(patches)
@@ -97,8 +121,11 @@ def patches_to_tensor(patches, patch_size):
     # convert to tensor once done
     return tf.convert_to_tensor(patches_array)
 
-def tensor_patching(img, patch_size, return_intervals = True):
-    patches, height_info, width_info = patching(img, patch_size, return_intervals)
+def tensor_patching(img, patch_size, fixed_overlaps = False, return_intervals = True):
+    if fixed_overlaps:
+        patches, height_info, width_info = patching_fo(img, patch_size, return_intervals)
+    else:
+        patches, height_info, width_info = patching(img, patch_size, return_intervals)
     return patches_to_tensor(patches, patch_size), height_info, width_info
     
-    
+

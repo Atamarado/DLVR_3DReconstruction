@@ -86,7 +86,7 @@ class Decoder(tf.Module):
         
 
 class PatchNet(tf.Module):
-    def __init__(self, patch_size, min_channels, name = "patchnet"):
+    def __init__(self, patch_size, min_channels, fixed_overlaps, name = "patchnet"):
         # seed = 758
         # random.seed(seed)
         # np.random.seed(seed)
@@ -103,6 +103,7 @@ class PatchNet(tf.Module):
         self.opt = Adam(learning_rate = 0.001)
         # save patch size for later usage
         self.patch_size = patch_size
+        self.fixed_overlaps = fixed_overlaps
     
     def __call__(self, x):
         encoded = self.encoder(x)
@@ -130,7 +131,7 @@ class PatchNet(tf.Module):
         
     # TO-DO: delete overlap after investigation
     def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):
-        patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
+        patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size, self.fixed_overlaps)
         # forward pass
         depth_maps, normals_maps = self(patches)
         # stitch the maps together
