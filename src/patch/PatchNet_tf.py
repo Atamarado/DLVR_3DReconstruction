@@ -128,24 +128,25 @@ class PatchNet(tf.Module):
     
     def validation_step(self, x, foreground_map, depth_map, normals_map):
         pred_depth_map, pred_normals_map = self(x)
-        #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
         return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
-    def forward_image(self, img, foreground_map, print_maps = True):
+    # TO-DO: delete overlap after investigation
+    def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size)
         # forward pass
         depth_maps, normals_maps = self(patches)
         # stitch the maps together
-        pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals)
-        pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
+        pred_depth_map, overlap = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals)
+        pred_normals_map, overlap = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
         if print_maps:
-            plt.imshow(tf.cast(pred_depth_map, dtype="float32") * foreground_map)
+            plt.imshow(tf.math.abs(tf.cast(pred_depth_map, dtype="float32") - true_depth_map) * foreground_map)
+            plt.imshow(tf.math.abs(tf.cast(pred_normals_map, dtype="float32") - true_normals_map) * foreground_map)
             #plt.imshow(normals_maps)
-        return pred_depth_map, pred_normals_map
+        return pred_depth_map, pred_normals_map, overlap
         
     # method for feeding a whole picture and 
-    def validate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = True):
-        pred_depth_map, pred_normals_map = self.forward_image(img, foreground_map, print_maps)
+    def validate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = False):
+        pred_depth_map, pred_normals_map, overlap = self.forward_image(img, foreground_map, print_maps, depth_map, normals_map)
         # cast to correct float format
         pred_depth_map = tf.cast(pred_depth_map, dtype = "float32")
         pred_normals_map = tf.cast(pred_normals_map, dtype = "float32")
@@ -156,5 +157,5 @@ class PatchNet(tf.Module):
         depth_map_fg = depth_map_fg - tf.reduce_mean(depth_map_fg)
         pred_depth_map_fg = pred_depth_map_fg - tf.reduce_mean(pred_depth_map_fg)
         # compute the loss 
-        return prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, normals_map, foreground_map)
+        return prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, normals_map, foreground_map, mode = "seperate")
                

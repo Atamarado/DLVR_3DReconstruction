@@ -45,7 +45,8 @@ def image_loop(model, data_generator, n_batches):
     data_generator.set_patching(False)
     n_batches = np.min([data_generator.__len__(), n_batches])
     batch_size = data_generator.batch_size
-    loss = 0
+    # To-Do change this after investigation
+    loss = np.array([0, 0])
     # loop over all images
     for i in tqdm(range(n_batches), desc = "Validation progress (images)"):
         inputs, maps = data_generator.__getitem__(i)

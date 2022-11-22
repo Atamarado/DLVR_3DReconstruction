@@ -22,7 +22,7 @@ patchnet = PatchNet(patch_size, min_channels)
 datagen = DataGenerator(train_path, batch_size, patching = True, patch_size = patch_size)
 
 # use train to train patchnet
-train(patchnet, datagen, epochs, n_train_batches = 80, n_val_batches = 20)
+train(patchnet, datagen, epochs, n_train_batches = 1, n_val_batches = 1)
 
 # test with test data
 test_path = "data\\pnData\\test"

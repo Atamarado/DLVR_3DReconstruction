@@ -133,7 +133,7 @@ def normal_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_p
     # Return the average per pixel loss
     return total_loss / tf.reduce_sum(foreground_mask_patch)
 
-def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_normal_patch: tf.Tensor, normal_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
+def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_normal_patch: tf.Tensor, normal_patch: tf.Tensor, foreground_mask_patch: tf.Tensor, mode: str) -> tf.float32:
     """Calculates the total combined loss of the patch predictions
 
     Args:
@@ -151,4 +151,7 @@ def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_no
     loss_depth = depth_loss(pred_depth_patch, depth_patch, foreground_mask_patch)
     loss_normal = normal_loss(pred_normal_patch, normal_patch, foreground_mask_patch)
     
-    return loss_depth + loss_normal
+    if mode == "seperate":
+        return [loss_depth, loss_normal]
+    else:
+        return loss_depth + loss_normal
