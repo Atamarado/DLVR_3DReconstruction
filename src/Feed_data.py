@@ -31,9 +31,9 @@ def patch_loop(model, data_generator, validation = False, n_batches = math.inf):
         normals_map = maps[:,:,:,1:]
         # do the respective step
         if validation:
-            loss += model.training_step(patches, foreground_map, depth_map, normals_map)
-        else:
             loss += model.validation_step(patches, foreground_map, depth_map, normals_map)
+        else:
+            loss += model.training_step(patches, foreground_map, depth_map, normals_map)
         # remember number of patches
         total_patches += len(patches)
         

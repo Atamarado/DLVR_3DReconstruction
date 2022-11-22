@@ -11,7 +11,7 @@ from Feed_data import train, test
 
 #
 epochs = 2
-patch_size = 128
+patch_size = 160
 fixed_overlaps = True
 min_channels = 8
 batch_size = 32
