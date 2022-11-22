@@ -116,19 +116,17 @@ class PatchNet(tf.Module):
             pred_depth_map, pred_normals_map = self(x)
             if np.isnan(pred_depth_map).any():
                 print("Problem detected")
-            loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+            loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map, mode = "casual")
     
         parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
         grads = tape.gradient(loss, parameters)
-        
-        loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
         self.opt.apply_gradients(zip(grads, parameters))
         return loss
     
     def validation_step(self, x, foreground_map, depth_map, normals_map):
         pred_depth_map, pred_normals_map = self(x)
-        return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+        return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map, mode = "casual")
         
     # TO-DO: delete overlap after investigation
     def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):

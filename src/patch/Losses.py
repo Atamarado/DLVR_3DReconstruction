@@ -7,6 +7,7 @@ Created on Thu Nov 10 13:32:55 2022
 
 import tensorflow as tf
 from math import pi
+import numpy as np
 
 def mean_squared_error(true, pred, batched = True):
     if batched:
@@ -152,6 +153,6 @@ def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_no
     loss_normal = normal_loss(pred_normal_patch, normal_patch, foreground_mask_patch)
     
     if mode == "seperate":
-        return [loss_depth, loss_normal]
+        return np.array([loss_depth, loss_normal])
     else:
         return loss_depth + loss_normal
