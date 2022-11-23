@@ -35,9 +35,9 @@ def patch_loop(model, data_generator, validation = False, n_batches = math.inf):
         else:
             loss += model.training_step(patches, foreground_map, depth_map, normals_map)
         # remember number of patches
-        total_patches += len(patches)
+        # total_patches += len(patches)
         
-    return loss / total_patches
+    return loss / n_batches
 
 
 def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=math.inf):
@@ -75,9 +75,9 @@ def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=
             depth_loss += d_loss
             normal_loss += n_loss
         # remember number of patches
-        total_patches += len(patches)
+        # total_patches += len(patches)
 
-    return total_loss / total_patches, depth_loss / total_patches, normal_loss / total_patches
+    return total_loss / n_batches, depth_loss / n_batches, normal_loss / n_batches
 
 def image_loop(model, data_generator, n_batches):
     # set the options for the data generator
