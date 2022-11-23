@@ -7,6 +7,7 @@ Created on Mon Oct 24 10:55:26 2022
 import numpy as np
 import tensorflow as tf
 from scipy.optimize import least_squares
+from cv2 import bilateralFilter
 
 def compute_interval_overlap(interval1, interval2):
     min1 = np.min(interval1)
@@ -101,6 +102,33 @@ def compute_translation_offsets(patches, height_intervals, width_intervals):
     LQ_result = least_squares(compute_translation_loss, x0, kwargs = {"differences": differences})
     # return the optimal offsets
     return LQ_result.x
+
+
+# functions to compute boundary regions from a list of index intervals for patches
+def compute_boundary_regions_1D(intervals):
+    unique_intervals = np.unique(np.stack(intervals), axis = 0)
+    if len(unique_intervals) == 1:
+        raise("there is only one patch")
+    # now generate a list of indices to adapt
+    begin_patch = unique_intervals[1:, 0]
+    end_patch = unique_intervals[:-1, 1]
+    return np.concatenate([begin_patch - 1, begin_patch, end_patch - 1, end_patch])
+
+def compute_boundary_regions_2D(height_intervals, width_intervals):
+    height_indices = compute_boundary_regions_1D(height_intervals)
+    width_indices = compute_boundary_regions_1D(width_intervals)
+    
+    return height_indices, width_indices
+
+def smoothen_boundaries(stitched_map, height_intervals, width_intervals, sigma):
+    # first compute the indices which need to be changed
+    height_indices, width_indices = compute_boundary_regions_2D(height_intervals, width_intervals)
+    # then compute the bilateral filtering for the whole map
+    filtered_map = bilateralFilter(stitched_map, d = (3, 3), sigmaColor = sigma)
+    # change values from the initial map to the values of the filtered map
+    stitched_map[height_indices, :] = filtered_map[height_indices, :]
+    stitched_map[width_indices, :] = filtered_map[width_indices, :]
+    return stitched_map
 
 def depth_map_stitching(image_shape, patches, height_intervals, width_intervals, include_offsets = True):
     # exclude the channel dimension
