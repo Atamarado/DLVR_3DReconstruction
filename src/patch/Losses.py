@@ -173,7 +173,7 @@ def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_no
     return loss_depth + loss_normal
 
 
-def prediction_loss_separate_losses(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_normal_patch: tf.Tensor, normal_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tuple[tf.float32, tf.float32, tf.float32]:
+def prediction_loss_separate_losses(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_normal_patch: tf.Tensor, normal_patch: tf.Tensor, foreground_mask_patch: tf.Tensor):
     # Calculate the two losses
     loss_depth = depth_loss(
         pred_depth_patch, depth_patch, foreground_mask_patch)
