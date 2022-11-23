@@ -7,6 +7,7 @@ Created on Mon Oct 24 10:55:26 2022
 import numpy as np
 import tensorflow as tf
 from scipy.optimize import least_squares
+from cv2 import bilateralFilter
 
 def compute_interval_overlap(interval1, interval2):
     min1 = np.min(interval1)
@@ -102,7 +103,40 @@ def compute_translation_offsets(patches, height_intervals, width_intervals):
     # return the optimal offsets
     return LQ_result.x
 
-def depth_map_stitching(image_shape, patches, height_intervals, width_intervals, include_offsets = True):
+
+# functions to compute boundary regions from a list of index intervals for patches
+def compute_boundary_regions_1D(intervals):
+    unique_intervals = np.unique(np.stack(intervals), axis = 0)
+    if len(unique_intervals) == 1:
+        raise("there is only one patch")
+    # now generate a list of indices to adapt
+    begin_patch = unique_intervals[1:, 0]
+    end_patch = unique_intervals[:-1, 1]
+    return np.concatenate([begin_patch - 1, begin_patch, end_patch - 1, end_patch])
+
+def compute_boundary_regions_2D(height_intervals, width_intervals):
+    height_indices = compute_boundary_regions_1D(height_intervals)
+    width_indices = compute_boundary_regions_1D(width_intervals)
+    
+    return height_indices, width_indices
+
+def smoothen_boundaries(stitched_map, height_intervals, width_intervals, sigma):
+    # first compute the indices which need to be changed
+    height_indices, width_indices = compute_boundary_regions_2D(height_intervals, width_intervals)
+    # convert to float32, since this is necessary for the bilateral filtering
+    stitched_map = stitched_map.astype("float32")
+    # then compute the bilateral filtering for the whole map
+    # NOTE that sigmaSpace is not used anyway, we just have to define it, since cv2 didn't implemented it appropriately
+    filtered_map = bilateralFilter(stitched_map, d = 3, sigmaColor = sigma, sigmaSpace = 1)
+    # TO-DO: DELETE ME AFTER TRYING
+    return filtered_map
+    # change values from the initial map to the values of the filtered map
+    stitched_map[height_indices] = filtered_map[height_indices]
+    stitched_map[:, width_indices] = filtered_map[:, width_indices]
+    return stitched_map
+
+def depth_map_stitching(image_shape, patches, height_intervals, width_intervals, 
+                        apply_smoothing = True, include_offsets = True, sigma = 10):
     # exclude the channel dimension
     patches = patches[:,:,:,0]
     # initialize the output variables
@@ -126,9 +160,13 @@ def depth_map_stitching(image_shape, patches, height_intervals, width_intervals,
                         width_interval[0]:width_interval[1]] += patches[i + 1] + translation_offsets[i] * include_offsets
         denominators[height_interval[0]:height_interval[1], 
                      width_interval[0]:width_interval[1]] += 1
+    average_depths = image_depth_map / denominators
+    # apply the bilateral filtering
+    if apply_smoothing:
+        average_depths = smoothen_boundaries(average_depths, height_intervals, width_intervals, sigma)
     # return depth_map for the whole image
-    image_depth_map = np.reshape(image_depth_map / denominators, image_depth_map.shape + tuple([1]))
-    return tf.convert_to_tensor(image_depth_map)
+    average_depths = np.reshape(average_depths, average_depths.shape + tuple([1]))
+    return tf.convert_to_tensor(average_depths)
 
 
 def normalize_predictions(patches):
@@ -142,7 +180,7 @@ def normalize_predictions(patches):
     return tf.convert_to_tensor(normalized_patches)
 
 # THIS FUNCTION IS INCOMPLETE
-def normals_map_stitching(image_shape, patches, height_intervals, width_intervals):
+def normals_map_stitching(image_shape, patches, height_intervals, width_intervals, apply_smoothing = True):
     # initialize an average map
     normals_map = np.zeros(image_shape)
     denominators = np.zeros(image_shape)
@@ -157,7 +195,10 @@ def normals_map_stitching(image_shape, patches, height_intervals, width_interval
                     width_interval[0]:width_interval[1]] += patches[i]
         denominators[height_interval[0]:height_interval[1], 
                      width_interval[0]:width_interval[1]] += 1
-    # normalize the average normals map again
     average_normals = normals_map / denominators
+    # apply the bilateral filtering
+    if apply_smoothing:
+        average_normals = smoothen_boundaries(average_normals, height_intervals, width_intervals, 0.3)
+    # normalize the average normals map again
     average_normals = np.reshape(average_normals, tuple([1]) + average_normals.shape)
     return normalize_predictions(average_normals)[0]

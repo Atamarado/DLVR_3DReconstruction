@@ -30,7 +30,16 @@ def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_pa
     abs_diff: tf.Tensor
     abs_diff = tf.math.abs(tf.math.subtract(truth_patch, pred_patch))
     abs_diff = tf.math.multiply(abs_diff, foreground_mask_patch)
-    return tf.math.reduce_sum(abs_diff) / tf.math.reduce_sum(foreground_mask_patch)
+    # case distinction between patches and whole images
+    dims = len(abs_diff.shape)
+    
+    if dims == 4:
+        sum_axis = range(1, dims)
+        return tf.math.reduce_sum(tf.math.reduce_sum(abs_diff, axis = sum_axis) / tf.math.reduce_sum(foreground_mask_patch, axis = sum_axis))
+    elif dims == 3:
+        return tf.math.reduce_sum(abs_diff) / tf.math.reduce_sum(foreground_mask_patch)
+    else:
+        raise("Dimensionality of input is not correct")
 
 def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
     """Calculate the linearized version of the cosine similarity of the predicted normals
@@ -79,7 +88,7 @@ def normal_cosine_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground
         print("Assert problem")
     assert tf.reduce_min(arccos_ratio) >= 0
     
-    return tf.math.reduce_sum(arccos_ratio)
+    return arccos_ratio
 
 def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
     """Calculate the squared length loss of each pixel's normal vector
@@ -108,7 +117,7 @@ def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.f
     # Remove the background losses
     norm_pred = tf.multiply(norm_pred, foreground_mask_patch)
 
-    return tf.math.reduce_sum(norm_pred)
+    return norm_pred
 
 def normal_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
     """Calculates the loss of a patch's normal map prediction
@@ -130,8 +139,18 @@ def normal_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_p
     K = 10
     total_loss = K * cosine_loss + norm_loss
 
-    # Return the average per pixel loss
-    return total_loss / tf.reduce_sum(foreground_mask_patch)
+    dims = len(total_loss.shape)
+    
+    if dims == 4:
+        sum_axis = range(1, dims)
+        # Return the average per pixel loss
+        return tf.reduce_sum(tf.reduce_sum(total_loss, axis = sum_axis) / tf.reduce_sum(foreground_mask_patch, axis = sum_axis))
+    elif dims == 3:
+        return tf.math.reduce_sum(total_loss) / tf.math.reduce_sum(foreground_mask_patch)
+    else:
+        raise("Dimensionality of input is not correct")
+    
+    
 
 def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_normal_patch: tf.Tensor, normal_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
     """Calculates the total combined loss of the patch predictions

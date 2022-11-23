@@ -3,8 +3,6 @@ import os
 import numpy as np
 from PIL import Image
 from patch.Patching import tensor_patching
-import random
-import numpy as np
 
 # Inspired by: https://medium.com/analytics-vidhya/write-your-own-custom-data-generator-for-tensorflow-keras-1252b64e41c3
 class DataGenerator(tf.keras.utils.Sequence):
@@ -16,13 +14,15 @@ class DataGenerator(tf.keras.utils.Sequence):
                  validation=False,
                  train_val_split=0.2,
                  patching=True,
-                 patch_size=128):
+                 patch_size=128,
+                 fixed_overlaps=False):
 
         self.batch_size = batch_size
         self.validation = False
         self.train_val_split = train_val_split
         self.patching = patching
         self.patch_size = patch_size
+        self.fixed_overlaps = fixed_overlaps
 
         self.imagePath = os.path.join(path, 'images/')
         self.depthPath = os.path.join(path, 'depth_maps/')
@@ -37,7 +37,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         n_objs = len(self.objs)
         
-        self.n_train = int(np.floor(n_objs * (1 - train_val_split)))
+        self.n_train = int(n_objs * (1 - train_val_split))
         self.n_val = n_objs - self.n_train
     
     def on_epoch_end(self):
@@ -108,8 +108,8 @@ class DataGenerator(tf.keras.utils.Sequence):
             X_patched = tf.zeros((0, self.patch_size, self.patch_size, 4))
             y_patched = tf.zeros((0, self.patch_size, self.patch_size, 4))
             for i in range(len(batches)):
-                X_patched_i, _, _ = tensor_patching(X_batch[i], self.patch_size)
-                y_patched_i, _, _ = tensor_patching(y_batch[i], self.patch_size)
+                X_patched_i, _, _ = tensor_patching(X_batch[i], self.patch_size, self.fixed_overlaps)
+                y_patched_i, _, _ = tensor_patching(y_batch[i], self.patch_size, self.fixed_overlaps)
                 X_patched = tf.concat((X_patched, tf.cast(X_patched_i, dtype = "float32")), axis = 0)
                 y_patched = tf.concat((y_patched, tf.cast(y_patched_i, dtype = "float32")), axis = 0)
             # we can now simply overwrite the batch variables

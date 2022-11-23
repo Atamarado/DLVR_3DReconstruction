@@ -31,9 +31,9 @@ def patch_loop(model, data_generator, validation = False, n_batches = math.inf):
         normals_map = maps[:,:,:,1:]
         # do the respective step
         if validation:
-            loss += model.training_step(patches, foreground_map, depth_map, normals_map)
-        else:
             loss += model.validation_step(patches, foreground_map, depth_map, normals_map)
+        else:
+            loss += model.training_step(patches, foreground_map, depth_map, normals_map)
         # remember number of patches
         total_patches += len(patches)
         
@@ -87,6 +87,7 @@ def image_loop(model, data_generator, n_batches):
     data_generator.set_patching(False)
     n_batches = np.min([data_generator.__len__(), n_batches])
     batch_size = data_generator.batch_size
+    # To-Do change this after investigation
     loss = 0
     # loop over all images
     for i in tqdm(range(n_batches), desc = "Validation progress (images)"):
