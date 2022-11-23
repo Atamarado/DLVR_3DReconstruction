@@ -135,7 +135,7 @@ class PatchNet(tf.Module):
         # forward pass
         depth_maps, normals_maps = self(patches)
         # stitch the maps together
-        pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals)
+        pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, sigma = 10)
         pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
         if print_maps:
             plt.imshow(tf.math.abs(tf.cast(pred_depth_map, dtype="float32") - true_depth_map) * foreground_map)
