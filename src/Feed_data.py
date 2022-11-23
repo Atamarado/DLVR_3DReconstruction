@@ -100,7 +100,7 @@ def image_loop(model, data_generator, n_batches):
             normals_map = maps[j][:,:,1:]
             loss += model.validate_on_image(img, foreground_map, depth_map, normals_map, print_maps = False)
     
-    return loss / np.min([data_generator.n_val, n_batches * batch_size])
+    return loss / np.min([np.floor(data_generator.n_val / data_generator.batch_size), n_batches])
         
 
 def train(model, data_generator, epochs, n_batches = None, n_train_batches = None, n_val_batches = None):
