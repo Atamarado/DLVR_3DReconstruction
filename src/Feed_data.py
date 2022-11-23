@@ -65,13 +65,13 @@ def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=
         normals_map = maps[:, :, :, 1:]
         # do the respective step
         if validation:
-            t_loss, d_loss, n_loss = model.training_step(patches,
+            t_loss, d_loss, n_loss = model.training_step_separate_loss(patches,
                                         foreground_map, depth_map, normals_map)
             total_loss += t_loss
             depth_loss += d_loss
             normal_loss += n_loss
         else:
-            t_loss, d_loss, n_loss = model.validation_step(patches,
+            t_loss, d_loss, n_loss = model.validation_step_separate_loss(patches,
                                           foreground_map, depth_map, normals_map)
             total_loss += t_loss
             depth_loss += d_loss
