@@ -59,8 +59,7 @@ def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=
     for i in tqdm(range(n_batches), desc=desc):
         inputs, maps = data_generator.__getitem__(i)
         patches = inputs[:, :, :, 0:3]
-        foreground_map = tf.reshape(
-            inputs[:, :, :, 3], inputs.shape[:-1] + tuple([1]))
+        foreground_map = tf.reshape(inputs[:, :, :, 3], inputs.shape[:-1] + tuple([1]))
         depth_map = tf.reshape(maps[:, :, :, 0], maps.shape[:-1] + tuple([1]))
         normals_map = maps[:, :, :, 1:]
         # do the respective step
