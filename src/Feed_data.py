@@ -99,7 +99,7 @@ def image_loop(model, data_generator, n_batches):
             depth_map = tf.reshape(maps[j][:,:,0], img.shape[:-1] + tuple([1]))
             normals_map = maps[j][:,:,1:]
             loss += model.validate_on_image(img, foreground_map, depth_map, normals_map, print_maps = False)
-    
+         
     return loss / np.min([data_generator.n_val, n_batches * batch_size])
         
 

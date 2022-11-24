@@ -84,6 +84,7 @@ class PatchNet(tf.Module):
         pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, sigma = 10)
         pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
         # DELETE ALL OF THIS AFTER DEBUGGING
+        """
         # without filtering
         pred_depth_map_uf = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, apply_smoothing = False)
         pred_normals_map_uf = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals, apply_smoothing = False)
@@ -103,7 +104,7 @@ class PatchNet(tf.Module):
         unfiltered_loss = prediction_loss(pred_depth_map_uf_fg, depth_map_fg, pred_normals_map_uf, true_normals_map, foreground_map)
         
         print("Filter loss improvement:", unfiltered_loss - filtered_loss)
-        
+        """
         if print_maps:
             plt.imshow(tf.math.abs(tf.cast(pred_depth_map, dtype="float32") - true_depth_map) * foreground_map)
             plt.imshow(tf.math.abs(tf.cast(pred_normals_map, dtype="float32") - true_normals_map) * foreground_map)
@@ -120,8 +121,7 @@ class PatchNet(tf.Module):
         depth_map_fg = depth_map * foreground_map
         pred_depth_map_fg = pred_depth_map * foreground_map
         # normalize the depth maps
-        depth_map_fg = depth_map_fg - tf.reduce_mean(depth_map_fg)
-        pred_depth_map_fg = pred_depth_map_fg - tf.reduce_mean(pred_depth_map_fg)
+        pred_depth_map_fg = pred_depth_map_fg - tf.reduce_mean(pred_depth_map_fg) + tf.reduce_mean(pred_depth_map_fg)
         # compute the loss 
-        return prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, normals_map, foreground_map)
+        return prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, normals_map, foreground_map) 
                
