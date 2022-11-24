@@ -28,4 +28,4 @@ class ConvTranposeLayer(tf.Module):
 
 class PatchInterface:
     def getNets(self):
-        return self.encoder, self.depth_decoder, self.normals_decoder
+        return self.depthNet, self.normalNet

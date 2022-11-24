@@ -12,33 +12,10 @@ from matplotlib import pyplot as plt
 from patch.Stitching import depth_map_stitching, normals_map_stitching
 from patch.Losses import prediction_loss, prediction_loss_separate_losses
 from patch.Patching import tensor_patching
+from patch.nets.PatchInterface import ConvLayer, ConvTransposeLayer, PatchInterface
 
-class ConvLayer(tf.Module):
-    def __init__(self, out_channels, name = "ConvLayer"):
-        super(ConvLayer, self).__init__(name)
-        self.conv = Conv2D(out_channels, 3, padding = "same")
-        self.batchnorm = BatchNormalization()
-        self.relu = ReLU()  
-    
-    def __call__(self, x):
-        x = self.conv(x)
-        x = self.batchnorm(x)
-        return self.relu(x)
-
-class ConvTranposeLayer(tf.Module):
-    def __init__(self, out_channels, name="ConvLayer"):
-        super(ConvTranposeLayer, self).__init__(name)
-        self.conv = Conv2DTranspose(out_channels, 3, padding="same")
-        self.batchnorm = BatchNormalization()
-        self.relu = ReLU()
-
-    def __call__(self, x):
-        x = self.conv(x)
-        x = self.batchnorm(x)
-        return self.relu(x)
-    
 class Decoder():
-    def __init__(self, min_channels, out_channels, input_layer, conv_connections, name = "decoder"):
+    def __init__(self, min_channels, out_channels, input_layer, conv_connections):
         (c1, c2, c3, c4, c5) = conv_connections
         up5 = Concatenate()([c5, input_layer])
         ct5 = ConvTranposeLayer(min_channels * 8)(up5)
@@ -66,20 +43,11 @@ class Decoder():
         self.out = out
     
     def __call__(self, x):
-        return self.out()
-        
+        return self.out
 
-class PatchNet(tf.Module):
-    def __init__(self, patch_size, min_channels, fixed_overlaps, name = "patchnet"):
-        # seed = 758
-        # random.seed(seed)
-        # np.random.seed(seed)
-        # tf.random.set_seed(seed)
-        # tf.experimental.numpy.random.seed(seed)
-        # print("Tensorflow seed", seed)
-        super(PatchNet, self).__init__(name)
-        input_size = (patch_size, patch_size, 3) # TODO: Check out input_size dimensionality
-        encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
+class TfNetwork(PatchInterface):
+    def __init__(self, patch_size, min_channels):
+        input_size = (patch_size, patch_size, 3)
 
         # Encoder
         i = Input(input_size)
@@ -105,92 +73,16 @@ class PatchNet(tf.Module):
         f1 = Flatten()(p5)
         d1 = Dense(6400)(f1)
 
-        input_decoder = tf.reshape(d1, [-1]+(c5.get_shape()[1:].as_list()))
+        input_layer_decoder = tf.reshape(d1, [-1]+(c5.get_shape()[1:].as_list()))
+
+        self.encoder = tf.keras.Model()
 
         conv_connections = [c1, c2, c3, c4, c5]
 
-        depth_layers = Decoder(min_channels, 1, input_decoder, conv_connections, "depth_decoder")
+        depth_layers = Decoder(min_channels, 1, input_layer_decoder, conv_connections, "depth_decoder")
         depth_layers = depth_layers.out
         self.depth_decoder = tf.keras.Model(i, depth_layers)
-        normal_layers = Decoder(min_channels, 3, input_decoder, conv_connections, "normals_decoder")
+
+        normal_layers = Decoder(min_channels, 3, input_layer_decoder, conv_connections, "normals_decoder")
         normal_layers = normal_layers.out
         self.normals_decoder = tf.keras.Model(i, normal_layers)
-        # initialize optimizer
-        self.opt = Adam(learning_rate = 0.001)
-        # save patch size for later usage
-        self.patch_size = patch_size
-        self.fixed_overlaps = fixed_overlaps
-    
-    def __call__(self, x):
-        depth_map = self.depth_decoder(x)
-        normals_map = self.normals_decoder(x)
-        
-        return depth_map, normals_map
-    
-    def training_step(self, x, foreground_map, depth_map, normals_map):
-        with tf.GradientTape(persistent = False) as tape:
-            pred_depth_map, pred_normals_map = self(x)
-            if np.isnan(pred_depth_map).any():
-                print("Problem detected")
-            loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
-    
-        parameters = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
-        grads = tape.gradient(loss, parameters)
-        
-        self.opt.apply_gradients(zip(grads, parameters))
-        return loss
-
-    def training_step_separate_loss(self, x, foreground_map, depth_map, normals_map):
-        with tf.GradientTape(persistent=False) as tape:
-            pred_depth_map, pred_normals_map = self(x)
-            if np.isnan(pred_depth_map).any():
-                print("Problem detected")
-            loss, depth_loss, normal_loss = prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map,
-                                                                            normals_map, foreground_map)
-
-        parameters = self.encoder.trainable_variables + \
-                     self.depth_decoder.trainable_variables + \
-                     self.normals_decoder.trainable_variables
-        grads = tape.gradient(loss, parameters)
-
-        self.opt.apply_gradients(zip(grads, parameters))
-        return loss, depth_loss, normal_loss
-    
-    def validation_step(self, x, foreground_map, depth_map, normals_map):
-        pred_depth_map, pred_normals_map = self(x)
-        return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
-
-    def validation_step_separate_loss(self, x, foreground_map, depth_map, normals_map):
-        pred_depth_map, pred_normals_map = self(x)
-        #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
-        return prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
-        
-    # TO-DO: delete overlap after investigation
-    def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):
-        patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size, self.fixed_overlaps)
-        # forward pass
-        depth_maps, normals_maps = self(patches)
-        # stitch the maps together
-        pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, sigma = 10)
-        pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
-        if print_maps:
-            plt.imshow(tf.math.abs(tf.cast(pred_depth_map, dtype="float32") - true_depth_map) * foreground_map)
-            plt.imshow(tf.math.abs(tf.cast(pred_normals_map, dtype="float32") - true_normals_map) * foreground_map)
-            #plt.imshow(normals_maps)
-        return pred_depth_map, pred_normals_map
-        
-    # method for feeding a whole picture and 
-    def validate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = False):
-        pred_depth_map, pred_normals_map = self.forward_image(img, foreground_map, print_maps, depth_map, normals_map)
-        # cast to correct float format
-        pred_depth_map = tf.cast(pred_depth_map, dtype = "float32")
-        pred_normals_map = tf.cast(pred_normals_map, dtype = "float32")
-        # only consider foreground pixels
-        depth_map_fg = depth_map * foreground_map
-        pred_depth_map_fg = pred_depth_map * foreground_map
-        # normalize the depth maps
-        depth_map_fg = depth_map_fg - tf.reduce_mean(depth_map_fg)
-        pred_depth_map_fg = pred_depth_map_fg - tf.reduce_mean(pred_depth_map_fg)
-        # compute the loss 
-        return prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, normals_map, foreground_map)
-               
