@@ -35,8 +35,7 @@ def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_pa
     
     if dims == 4:
         sum_axis = range(1, dims)
-        # the average pixel loss in each patch averaged over all patches
-        return tf.math.reduce_sum(tf.math.reduce_sum(abs_diff, axis = sum_axis) / tf.math.reduce_sum(foreground_mask_patch, axis = sum_axis)) / abs_diff.shape[0]
+        return tf.math.reduce_sum(tf.math.reduce_sum(abs_diff, axis = sum_axis) / tf.math.reduce_sum(foreground_mask_patch, axis = sum_axis))
     elif dims == 3:
         return tf.math.reduce_sum(abs_diff) / tf.math.reduce_sum(foreground_mask_patch)
     else:
@@ -144,8 +143,8 @@ def normal_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_p
     
     if dims == 4:
         sum_axis = range(1, dims)
-        # Return the average per pixel loss of each patch averaged over the batch
-        return tf.reduce_sum(tf.reduce_sum(total_loss, axis = sum_axis) / tf.reduce_sum(foreground_mask_patch, axis = sum_axis)) / total_loss.shape[0]
+        # Return the average per pixel loss
+        return tf.reduce_sum(tf.reduce_sum(total_loss, axis = sum_axis) / tf.reduce_sum(foreground_mask_patch, axis = sum_axis))
     elif dims == 3:
         return tf.math.reduce_sum(total_loss) / tf.math.reduce_sum(foreground_mask_patch)
     else:
