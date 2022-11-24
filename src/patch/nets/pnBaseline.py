@@ -5,19 +5,8 @@ Created on Sun Oct 23 19:19:22 2022
 @author: Marc Johler
 """
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D
-
-class ConvLayer(tf.Module):
-    def __init__(self, out_channels, name = "ConvLayer"):
-        super(ConvLayer, self).__init__(name)
-        self.conv = Conv2D(out_channels, 3, padding = "same")
-        self.batchnorm = BatchNormalization()
-        self.relu = ReLU()  
-    
-    def __call__(self, x):
-        x = self.conv(x)
-        x = self.batchnorm(x)
-        return self.relu(x)
+from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D
+from patch.nets.PatchInterface import ConvLayer, PatchInterface
     
 class Encoder_common(tf.Module):
     def __init__(self, input_size, min_channels, name = "Encoder_common"):
@@ -79,14 +68,11 @@ class Decoder(tf.Module):
         return self.layers(x)
         
 
-class TfNetwork():
+class TfNetwork(PatchInterface):
     def __init__(self, patch_size, min_channels):
         input_size = (3, patch_size, patch_size, 3)
         encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
         self.encoder = Encoder_common(input_size, min_channels)
         self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
         self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
-    
-    def getNets(self):
-        return self.encoder, self.depth_decoder, self.normals_decoder
                
