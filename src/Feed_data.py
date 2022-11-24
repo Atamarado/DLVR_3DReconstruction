@@ -113,12 +113,12 @@ def train(model, data_generator, epochs, n_batches = None, n_train_batches = Non
     
     for epoch in range(epochs):
         train_loss = patch_loop(model, data_generator, validation = False, n_batches = n_train_batches)
-        val_loss_patch = patch_loop(model, data_generator, validation = True, n_batches = n_val_batches)
+        #val_loss_patch = patch_loop(model, data_generator, validation = True, n_batches = n_val_batches)
         val_loss_img = image_loop(model, data_generator, n_batches = n_val_batches)
         
         print("Epoch", epoch, "done with losses:")
         print("Training:", train_loss)
-        print("Validation on patches", val_loss_patch)
+        #print("Validation on patches", val_loss_patch)
         print("Validation on images:", val_loss_img)
         
     print("Training finished after", epochs, "Epochs")

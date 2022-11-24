@@ -10,7 +10,7 @@ from DataGenerator import DataGenerator
 from Feed_data import train, test
 
 #
-epochs = 2
+epochs = 1
 patch_size = 160
 fixed_overlaps = True
 min_channels = 8
@@ -23,7 +23,7 @@ datagen = DataGenerator(train_path, batch_size, patching = True,
                         patch_size = patch_size, fixed_overlaps = fixed_overlaps)
 
 # use train to train patchnet
-train(patchnet, datagen, epochs, n_train_batches = 5, n_val_batches = 5)
+train(patchnet, datagen, epochs, n_train_batches = 100, n_val_batches = 100)
 
 # test with test data
 test_path = "data\\pnData\\test"

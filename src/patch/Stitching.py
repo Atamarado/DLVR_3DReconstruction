@@ -136,7 +136,7 @@ def smoothen_boundaries(stitched_map, height_intervals, width_intervals, sigma):
     return stitched_map
 
 def depth_map_stitching(image_shape, patches, height_intervals, width_intervals, 
-                        apply_smoothing = True, include_offsets = True, sigma = 10):
+                        apply_smoothing = True, sigma = 10, include_offsets = True):
     # exclude the channel dimension
     patches = patches[:,:,:,0]
     # initialize the output variables
