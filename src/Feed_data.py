@@ -35,9 +35,49 @@ def patch_loop(model, data_generator, validation = False, n_batches = math.inf):
         else:
             loss += model.training_step(patches, foreground_map, depth_map, normals_map)
         # remember number of patches
-        total_patches += len(patches)
+        # total_patches += len(patches)
         
-    return loss / total_patches
+    return loss / n_batches
+
+
+def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=math.inf):
+    # set the options for the data generator
+    data_generator.set_validation(validation)
+    data_generator.set_patching(True)
+    n_batches = np.min([data_generator.__len__(), n_batches])
+    total_patches = 0
+    total_loss = 0
+    depth_loss = 0
+    normal_loss = 0
+    # description for progress bar
+    if validation:
+        desc = "Validation progress (patches)"
+    else:
+        desc = "Training progress"
+    # loop over the data
+    # TO-DO: replace 10 with n_batches for final training loop
+    for i in tqdm(range(n_batches), desc=desc):
+        inputs, maps = data_generator.__getitem__(i)
+        patches = inputs[:, :, :, 0:3]
+        foreground_map = tf.reshape(
+            inputs[:, :, :, 3], inputs.shape[:-1] + tuple([1]))
+        depth_map = tf.reshape(maps[:, :, :, 0], maps.shape[:-1] + tuple([1]))
+        normals_map = maps[:, :, :, 1:]
+        # do the respective step
+        if validation:
+            t_loss, d_loss, n_loss = model.training_step_separate_loss(patches, foreground_map, depth_map, normals_map)
+            total_loss += t_loss
+            depth_loss += d_loss
+            normal_loss += n_loss
+        else:
+            t_loss, d_loss, n_loss = model.validation_step_separate_loss(patches, foreground_map, depth_map, normals_map)
+            total_loss += t_loss
+            depth_loss += d_loss
+            normal_loss += n_loss
+        # remember number of patches
+        # total_patches += len(patches)
+
+    return total_loss / n_batches, depth_loss / n_batches, normal_loss / n_batches
 
 def image_loop(model, data_generator, n_batches):
     # set the options for the data generator
@@ -60,7 +100,7 @@ def image_loop(model, data_generator, n_batches):
             normals_map = maps[j][:,:,1:]
             loss += model.validate_on_image(img, foreground_map, depth_map, normals_map, print_maps = False)
     
-    return loss / np.min([data_generator.n_val, n_batches * batch_size])
+    return loss / np.min([np.floor(data_generator.n_val / data_generator.batch_size), n_batches])
         
 
 def train(model, data_generator, epochs, n_batches = None, n_train_batches = None, n_val_batches = None):

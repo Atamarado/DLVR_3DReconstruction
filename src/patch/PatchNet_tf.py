@@ -10,7 +10,7 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D,
 from tensorflow.keras.optimizers import Adam
 from matplotlib import pyplot as plt
 from patch.Stitching import depth_map_stitching, normals_map_stitching
-from patch.Losses import prediction_loss
+from patch.Losses import prediction_loss, prediction_loss_separate_losses
 from patch.Patching import tensor_patching
 
 class ConvLayer(tf.Module):
@@ -125,9 +125,30 @@ class PatchNet(tf.Module):
         self.opt.apply_gradients(zip(grads, parameters))
         return loss
     
+    def training_step_separate_loss(self, x, foreground_map, depth_map, normals_map):
+        with tf.GradientTape(persistent=False) as tape:
+            pred_depth_map, pred_normals_map = self(x)
+            if np.isnan(pred_depth_map).any():
+                print("Problem detected")
+            loss, depth_loss, normal_loss = prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+
+        parameters = self.encoder.trainable_variables + \
+            self.depth_decoder.trainable_variables + \
+            self.normals_decoder.trainable_variables
+        grads = tape.gradient(loss, parameters)
+
+        self.opt.apply_gradients(zip(grads, parameters))
+        return loss, depth_loss, normal_loss
+
+
     def validation_step(self, x, foreground_map, depth_map, normals_map):
         pred_depth_map, pred_normals_map = self(x)
         return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
+
+    def validation_step_separate_loss(self, x, foreground_map, depth_map, normals_map):
+        pred_depth_map, pred_normals_map = self(x)
+        #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
+        return prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
     # TO-DO: delete overlap after investigation
     def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):

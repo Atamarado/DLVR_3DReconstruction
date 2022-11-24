@@ -35,7 +35,8 @@ def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_pa
     
     if dims == 4:
         sum_axis = range(1, dims)
-        return tf.math.reduce_sum(tf.math.reduce_sum(abs_diff, axis = sum_axis) / tf.math.reduce_sum(foreground_mask_patch, axis = sum_axis))
+        # the average pixel loss in each patch averaged over all patches
+        return tf.math.reduce_sum(tf.math.reduce_sum(abs_diff, axis = sum_axis) / tf.math.reduce_sum(foreground_mask_patch, axis = sum_axis)) / abs_diff.shape[0]
     elif dims == 3:
         return tf.math.reduce_sum(abs_diff) / tf.math.reduce_sum(foreground_mask_patch)
     else:
@@ -143,8 +144,8 @@ def normal_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_p
     
     if dims == 4:
         sum_axis = range(1, dims)
-        # Return the average per pixel loss
-        return tf.reduce_sum(tf.reduce_sum(total_loss, axis = sum_axis) / tf.reduce_sum(foreground_mask_patch, axis = sum_axis))
+        # Return the average per pixel loss of each patch averaged over the batch
+        return tf.reduce_sum(tf.reduce_sum(total_loss, axis = sum_axis) / tf.reduce_sum(foreground_mask_patch, axis = sum_axis)) / total_loss.shape[0]
     elif dims == 3:
         return tf.math.reduce_sum(total_loss) / tf.math.reduce_sum(foreground_mask_patch)
     else:
@@ -171,3 +172,13 @@ def prediction_loss(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_no
     loss_normal = normal_loss(pred_normal_patch, normal_patch, foreground_mask_patch)
     
     return loss_depth + loss_normal
+
+
+def prediction_loss_separate_losses(pred_depth_patch: tf.Tensor, depth_patch: tf.Tensor, pred_normal_patch: tf.Tensor, normal_patch: tf.Tensor, foreground_mask_patch: tf.Tensor):
+    # Calculate the two losses
+    loss_depth = depth_loss(
+        pred_depth_patch, depth_patch, foreground_mask_patch)
+    loss_normal = normal_loss(
+        pred_normal_patch, normal_patch, foreground_mask_patch)
+
+    return loss_depth + loss_normal, loss_depth, loss_normal
