@@ -25,9 +25,9 @@ class ConvLayer(tf.Module):
         x = self.batchnorm(x)
         return self.relu(x)
 
-class ConvTranposeLayer():
+class ConvTranposeLayer(tf.Module):
     def __init__(self, out_channels, name="ConvLayer"):
-        super(Conv2DTranspose, self).__init__(name)
+        super(ConvTranposeLayer, self).__init__(name)
         self.conv = Conv2DTranspose(out_channels, 3, padding="same")
         self.batchnorm = BatchNormalization()
         self.relu = ReLU()
@@ -40,33 +40,33 @@ class ConvTranposeLayer():
 class Decoder():
     def __init__(self, min_channels, out_channels, input_layer, conv_connections, name = "decoder"):
         (c1, c2, c3, c4, c5) = conv_connections
-        up5 = Concatenate(axis=3)([c5, input_layer])
+        up5 = Concatenate()([c5, input_layer])
         ct5 = ConvTranposeLayer(min_channels * 8)(up5)
         ct5 = ConvTranposeLayer(min_channels * 8)(ct5)
         ct5 = ConvTranposeLayer(min_channels * 8)(ct5)
         up4 = UpSampling2D()(ct5)
-        u4 = Concatenate([c4, up4], axis=3)
+        u4 = Concatenate()([c4, up4])
         ct4 = ConvTranposeLayer(min_channels * 8)(u4)
         ct4 = ConvTranposeLayer(min_channels * 8)(ct4)
         ct4 = ConvTranposeLayer(min_channels * 8)(ct4)
         up3 = UpSampling2D()(ct4)
-        u3 = Concatenate([c3, up3], axis=3)
+        u3 = Concatenate()([c3, up3])
         ct3 = ConvTranposeLayer(min_channels * 4)(u3)
         ct3 = ConvTranposeLayer(min_channels * 4)(ct3)
         ct3 = ConvTranposeLayer(min_channels * 4)(ct3)
         up2 = UpSampling2D()(ct3)
-        u2 = Concatenate([c2, up2], axis=3)
+        u2 = Concatenate()([c2, up2])
         ct2 = ConvTranposeLayer(min_channels * 2)(u2)
         ct2 = ConvTranposeLayer(min_channels * 2)(ct2)
         up1 = UpSampling2D()(ct2)
-        u1 = Concatenate([c1, up1], axis=3)
+        u1 = Concatenate()([c1, up1])
         ct1 = ConvTranposeLayer(min_channels)(u1)
         ct1 = ConvTranposeLayer(min_channels)(ct1)
         out = Conv2D(out_channels, 1)(ct1)
-        return out
+        self.out = out
     
     def __call__(self, x):
-        return self.layers(x)
+        return self.out()
         
 
 class PatchNet(tf.Module):
@@ -105,14 +105,16 @@ class PatchNet(tf.Module):
         f1 = Flatten()(p5)
         d1 = Dense(6400)(f1)
 
-        input_decoder = tf.reshape(d1, c5.get_shape()[1:])
+        input_decoder = tf.reshape(d1, [-1]+(c5.get_shape()[1:].as_list()))
 
         conv_connections = [c1, c2, c3, c4, c5]
 
         depth_layers = Decoder(min_channels, 1, input_decoder, conv_connections, "depth_decoder")
+        depth_layers = depth_layers.out
         self.depth_decoder = tf.keras.Model(i, depth_layers)
         normal_layers = Decoder(min_channels, 3, input_decoder, conv_connections, "normals_decoder")
-        self.normals_decoder = tf.keras.Models(i, normal_layers)
+        normal_layers = normal_layers.out
+        self.normals_decoder = tf.keras.Model(i, normal_layers)
         # initialize optimizer
         self.opt = Adam(learning_rate = 0.001)
         # save patch size for later usage
