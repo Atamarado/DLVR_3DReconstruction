@@ -7,71 +7,80 @@ Created on Sun Oct 23 19:19:22 2022
 import tensorflow as tf
 from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D, Input
 from patch.nets.PatchInterface import ConvLayer, PatchInterface
-    
-class Encoder_common:
-    def __init__(self, input_size, min_channels):
-        i = Input(input_size)
-        l = ConvLayer(min_channels)(i)
-        l = ConvLayer(min_channels)(l)
-        l = MaxPool2D(2)(l)
-        l = ConvLayer(min_channels * 2)(l)
-        l = ConvLayer(min_channels * 2)(l)
-        l = MaxPool2D(2)(l)
-        l = ConvLayer(min_channels * 4)(l)
-        l = ConvLayer(min_channels * 4)(l)
-        l = ConvLayer(min_channels * 4)(l)
-        l = MaxPool2D(2)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = MaxPool2D(2)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = MaxPool2D(2)(l)
 
-        self.input = i
-        self.output = l
-    
-    def __call__(self):
-        return self.input, self.output
-    
-class Decoder:
-    def __init__(self, min_channels, out_channels, input_layer):
-        i = UpSampling2D()(input_layer)
-        l = ConvLayer(min_channels * 8)(i)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = UpSampling2D()(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = ConvLayer(min_channels * 8)(l)
-        l = UpSampling2D()(l)
-        l = ConvLayer(min_channels * 4)(l)
-        l = ConvLayer(min_channels * 4)(l)
-        l = ConvLayer(min_channels * 4)(l)
-        l = UpSampling2D()(l)
-        l = ConvLayer(min_channels * 2)(l)
-        l = ConvLayer(min_channels * 2)(l)
-        l = UpSampling2D()(l)
-        l = ConvLayer(min_channels)(l)
-        l = ConvLayer(min_channels)(l)
-        l = Conv2D(out_channels, 1)(l)
 
-        self.input = i
-        self.output = l
-    def __call__(self):
-        return self.input, self.output
+class Encoder_common(tf.Module):
+    def __init__(self, input_size, min_channels, name="Encoder_common"):
+        super(Encoder_common, self).__init__(name)
+        self.layers = tf.keras.Sequential([
+            Input(input_size),
+            ConvLayer(min_channels),
+            ConvLayer(min_channels),
+            MaxPool2D(2),
+            ConvLayer(min_channels * 2),
+            ConvLayer(min_channels * 2),
+            MaxPool2D(2),
+            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4),
+            MaxPool2D(2),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            MaxPool2D(2),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            MaxPool2D(2)
+        ])
+
+        self.layers.build(input_size)
+
+    def __call__(self, x):
+        return self.layers(x)
+
+
+class Decoder(tf.Module):
+    def __init__(self, input_size, min_channels, out_channels, name="decoder"):
+        super(Decoder, self).__init__(name)
+        self.layers = tf.keras.Sequential([
+            UpSampling2D(),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            UpSampling2D(),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8),
+            UpSampling2D(),
+            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4),
+            UpSampling2D(),
+            ConvLayer(min_channels * 2),
+            ConvLayer(min_channels * 2),
+            UpSampling2D(),
+            ConvLayer(min_channels),
+            ConvLayer(min_channels),
+            Conv2D(out_channels, 1)
+        ])
+
+        self.layers.build(input_size)
+    def __call__(self, x):
+        return self.layers(x)
         
 
-class TfNetwork(PatchInterface):
+class TfNetwork(PatchInterface, tf.Module):
     def __init__(self, patch_size, min_channels):
         input_size = (patch_size, patch_size, 3)
-        encoder = Encoder_common(input_size, min_channels)
-        input_decoders = encoder.output
+        encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
+        self.encoder = Encoder_common(input_size, min_channels)
+        self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
+        self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
 
-        depthDecoder = Decoder(min_channels, 1, input_decoders)
-        normalDecoder = Decoder(min_channels, 3, input_decoders)
+    def __call__(self, x):
+        encoded = self.encoder(x)
+        depth_map = self.depth_decoder(encoded)
+        normal_map = self.normals_decoder(encoded)
 
-        self.depthNet = tf.keras.Model(inputs=encoder.input, outputs=depthDecoder.output)
-        self.normalNet = tf.keras.Model(inputs=encoder.input, outputs=normalDecoder.output)
+        return depth_map, normal_map

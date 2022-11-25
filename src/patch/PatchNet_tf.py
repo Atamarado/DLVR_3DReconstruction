@@ -23,7 +23,7 @@ class PatchNet(tf.Module):
         super(PatchNet, self).__init__(name)
         input_size = (3, patch_size, patch_size, 3)
         encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
-        self.depth_decoder, self.normals_decoder = network.getNets()
+        self.network = network
         # initialize optimizer
         self.opt = Adam(learning_rate = 0.001)
         # save patch size for later usage
@@ -31,10 +31,7 @@ class PatchNet(tf.Module):
         self.fixed_overlaps = fixed_overlaps
     
     def __call__(self, x):
-        depth_map = self.depth_decoder.call(x)
-        normals_map = self.normals_decoder.call(x
-
-        return depth_map, normals_map
+        return self.network(x)
     
     def training_step(self, x, foreground_map, depth_map, normals_map):
         with tf.GradientTape(persistent = False) as tape:
@@ -43,7 +40,7 @@ class PatchNet(tf.Module):
                 print("Problem detected")
             loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
     
-        parameters = self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
+        parameters = self.network.trainable_parameters
         grads = tape.gradient(loss, parameters)
         
         self.opt.apply_gradients(zip(grads, parameters))
@@ -56,8 +53,7 @@ class PatchNet(tf.Module):
                 print("Problem detected")
             loss, depth_loss, normal_loss = prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
 
-        parameters = self.depth_decoder.trainable_variables + \
-            self.normals_decoder.trainable_variables
+        parameters = self.network.trainable_parameters
         grads = tape.gradient(loss, parameters)
 
         self.opt.apply_gradients(zip(grads, parameters))
