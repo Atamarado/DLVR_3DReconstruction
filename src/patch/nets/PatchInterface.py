@@ -14,9 +14,9 @@ class ConvLayer(tf.Module):
         return self.relu(x)
 
 
-class ConvTranposeLayer(tf.Module):
+class ConvTransposeLayer(tf.Module):
     def __init__(self, out_channels, name="ConvLayer"):
-        super(ConvTranposeLayer, self).__init__(name)
+        super(ConvTransposeLayer, self).__init__(name)
         self.conv = Conv2DTranspose(out_channels, 3, padding="same")
         self.batchnorm = BatchNormalization()
         self.relu = ReLU()
@@ -28,4 +28,4 @@ class ConvTranposeLayer(tf.Module):
 
 class PatchInterface:
     def getNets(self):
-        return self.encoder, self.depth_decoder, self.normals_decoder
+        return self.depthNet, self.normalNet
