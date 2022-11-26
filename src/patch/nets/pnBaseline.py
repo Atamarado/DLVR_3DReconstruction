@@ -10,27 +10,27 @@ from patch.nets.PatchInterface import ConvLayer, PatchInterface
 
 
 class Encoder_common(tf.Module):
-    def __init__(self, input_size, min_channels, name="Encoder_common"):
+    def __init__(self, input_size, min_channels, batchNorm, name="Encoder_common"):
         super(Encoder_common, self).__init__(name)
         self.layers = tf.keras.Sequential([
             Input(input_size),
-            ConvLayer(min_channels),
-            ConvLayer(min_channels),
+            ConvLayer(min_channels, batchNorm),
+            ConvLayer(min_channels, batchNorm),
             MaxPool2D(2),
-            ConvLayer(min_channels * 2),
-            ConvLayer(min_channels * 2),
+            ConvLayer(min_channels * 2, batchNorm),
+            ConvLayer(min_channels * 2, batchNorm),
             MaxPool2D(2),
-            ConvLayer(min_channels * 4),
-            ConvLayer(min_channels * 4),
-            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4, batchNorm),
+            ConvLayer(min_channels * 4, batchNorm),
+            ConvLayer(min_channels * 4, batchNorm),
             MaxPool2D(2),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
             MaxPool2D(2),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
             MaxPool2D(2)
         ])
 
@@ -41,27 +41,27 @@ class Encoder_common(tf.Module):
 
 
 class Decoder(tf.Module):
-    def __init__(self, input_size, min_channels, out_channels, name="decoder"):
+    def __init__(self, input_size, min_channels, out_channels, batchNorm, name="decoder"):
         super(Decoder, self).__init__(name)
         self.layers = tf.keras.Sequential([
             UpSampling2D(),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
             UpSampling2D(),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
-            ConvLayer(min_channels * 8),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
+            ConvLayer(min_channels * 8, batchNorm),
             UpSampling2D(),
-            ConvLayer(min_channels * 4),
-            ConvLayer(min_channels * 4),
-            ConvLayer(min_channels * 4),
+            ConvLayer(min_channels * 4, batchNorm),
+            ConvLayer(min_channels * 4, batchNorm),
+            ConvLayer(min_channels * 4, batchNorm),
             UpSampling2D(),
-            ConvLayer(min_channels * 2),
-            ConvLayer(min_channels * 2),
+            ConvLayer(min_channels * 2, batchNorm),
+            ConvLayer(min_channels * 2, batchNorm),
             UpSampling2D(),
-            ConvLayer(min_channels),
-            ConvLayer(min_channels),
+            ConvLayer(min_channels, batchNorm),
+            ConvLayer(min_channels, batchNorm),
             Conv2D(out_channels, 1)
         ])
 
@@ -71,10 +71,10 @@ class Decoder(tf.Module):
         
 
 class TfNetwork(PatchInterface, tf.Module):
-    def __init__(self, patch_size, min_channels):
+    def __init__(self, patch_size, min_channels, batchNorm=True):
         input_size = (patch_size, patch_size, 3)
         encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
-        self.encoder = Encoder_common(input_size, min_channels)
+        self.encoder = Encoder_common(input_size, min_channels, batchNorm)
         self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
         self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
 

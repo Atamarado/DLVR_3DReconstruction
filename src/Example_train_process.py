@@ -18,7 +18,7 @@ batch_size = 1
 train_path = "data\\pnData\\train"
 
 # train process happens as follows
-patchnet = PatchNet(patch_size, min_channels, fixed_overlaps, TfNetwork(patch_size, min_channels))
+patchnet = PatchNet(patch_size, min_channels, fixed_overlaps, TfNetwork(patch_size, min_channels, batchNorm=False))
 datagen = DataGenerator(train_path, batch_size, patching = True, 
                         patch_size = patch_size, fixed_overlaps = fixed_overlaps)
 
