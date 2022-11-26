@@ -79,4 +79,4 @@ class TfNetwork(PatchInterface, tf.Module):
         self.trainableVariables = self.network.trainable_weights
 
     def __call__(self, x):
-        return self.network.predict(x)
+        return self.network.call(x)
