@@ -15,7 +15,7 @@ epochs = 1
 patch_size = 160
 fixed_overlaps = True
 min_channels = 8
-batch_size = 32
+batch_size = 1
 train_path = "data\\pnData\\train"
 
 # train process happens as follows

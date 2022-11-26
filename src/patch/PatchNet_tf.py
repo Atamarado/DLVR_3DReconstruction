@@ -40,7 +40,7 @@ class PatchNet(tf.Module):
                 print("Problem detected")
             loss = prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
     
-        parameters = self.network.trainable_parameters
+        parameters = self.network.trainableVariables
         grads = tape.gradient(loss, parameters)
         
         self.opt.apply_gradients(zip(grads, parameters))
@@ -53,7 +53,7 @@ class PatchNet(tf.Module):
                 print("Problem detected")
             loss, depth_loss, normal_loss = prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
 
-        parameters = self.network.trainable_parameters
+        parameters = self.network.trainableVariables
         grads = tape.gradient(loss, parameters)
 
         self.opt.apply_gradients(zip(grads, parameters))

@@ -78,6 +78,7 @@ class TfNetwork(PatchInterface, tf.Module):
         self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
         self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
 
+        self.trainableVariables = self.encoder.trainable_variables + self.depth_decoder.trainable_variables + self.normals_decoder.trainable_variables
     def __call__(self, x):
         encoded = self.encoder(x)
         depth_map = self.depth_decoder(encoded)
