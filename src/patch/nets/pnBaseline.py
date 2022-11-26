@@ -73,7 +73,7 @@ class Decoder(tf.Module):
 class TfNetwork(PatchInterface, tf.Module):
     def __init__(self, patch_size, min_channels, batchNorm=True):
         input_size = (patch_size, patch_size, 3)
-        encoded_size = (3, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
+        encoded_size = (None, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
         self.encoder = Encoder_common(input_size, min_channels, batchNorm)
         self.depth_decoder = Decoder(encoded_size, min_channels, 1, "depth_decoder")
         self.normals_decoder = Decoder(encoded_size, min_channels, 3, "normals_decoder")
