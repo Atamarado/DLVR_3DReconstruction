@@ -5,7 +5,7 @@ Created on Tue Nov 15 17:45:12 2022
 @author: Marc Johler
 """
 
-from patch.nets.pnBaseline import TfNetwork
+from patch.nets.pnUNet import TfNetwork
 from patch.PatchNet_tf import PatchNet
 from DataGenerator import DataGenerator
 from Feed_data import train, test
