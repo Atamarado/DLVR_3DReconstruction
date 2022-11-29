@@ -179,7 +179,6 @@ def normalize_predictions(patches):
         normalized_patches[i] = normalized_patches[i] / normalize_with
     return tf.convert_to_tensor(normalized_patches)
 
-# THIS FUNCTION IS INCOMPLETE
 def normals_map_stitching(image_shape, patches, height_intervals, width_intervals, apply_smoothing = True):
     # initialize an average map
     normals_map = np.zeros(image_shape)
