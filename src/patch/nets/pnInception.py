@@ -60,3 +60,9 @@ class TfNetwork(PatchInterface, tf.Module):
 
     def __call__(self, x):
         return self.network.call(x)
+
+    def save_weights(self, filename):
+        self.network.save_weights(filename)
+
+    def load_weights(self, filename):
+        self.network.load_weights(filename)

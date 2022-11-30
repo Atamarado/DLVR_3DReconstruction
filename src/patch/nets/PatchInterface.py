@@ -30,5 +30,8 @@ class ConvTransposeLayer(tf.Module):
         return self.relu(x)
 
 class PatchInterface:
-    def getNets(self):
-        return self.depthNet, self.normalNet
+    def save_weights(self, filename):
+        pass
+
+    def load_weights(self, filename):
+        pass

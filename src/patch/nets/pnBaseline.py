@@ -85,3 +85,13 @@ class TfNetwork(PatchInterface, tf.Module):
         normal_map = self.normals_decoder(encoded)
 
         return depth_map, normal_map
+
+    def save_weights(self, filename):
+        self.encoder.layers.save_weights(filename + "_encoder")
+        self.depth_decoder.layers.save_weights(filename + "_depth")
+        self.normals_decoder.layers.save_weights(filename + "_normals")
+
+    def load_weights(self, filename):
+        self.encoder.layers.set_weights(filename + "_encoder")
+        self.depth_decoder.layers.set_weights(filename + "_depth")
+        self.normals_decoder.layers.set_weights(filename + "_normals")
