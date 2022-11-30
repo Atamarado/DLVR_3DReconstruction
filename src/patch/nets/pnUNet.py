@@ -63,9 +63,11 @@ class TfNetwork(PatchInterface, tf.Module):
         p5 = MaxPool2D(2, data_format='channels_last')(c5)
 
         f1 = Flatten()(p5)
-        d1 = Dense(6400)(f1)
+        d1 = Dense(1024, activation="relu")(f1)
 
-        input_layer_decoder = tf.reshape(d1, [-1]+(c5.get_shape()[1:].as_list()))
+        reshaped = tf.reshape(d1, [-1]+(p5.get_shape()[1:].as_list()))
+
+        input_layer_decoder = UpSampling2D()(reshaped)
 
         conv_connections = [c1, c2, c3, c4, c5]
 
