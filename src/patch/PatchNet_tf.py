@@ -69,7 +69,6 @@ class PatchNet(tf.Module):
         #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
         return prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
-    # TO-DO: delete overlap after investigation
     def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size, self.fixed_overlaps)
         # forward pass
@@ -77,28 +76,7 @@ class PatchNet(tf.Module):
         # stitch the maps together
         pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, sigma = 10)
         pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
-        # DELETE ALL OF THIS AFTER DEBUGGING
-        """
-        # without filtering
-        pred_depth_map_uf = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, apply_smoothing = False)
-        pred_normals_map_uf = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals, apply_smoothing = False)
-        # cast to correct float format
-        pred_depth_map_uf = tf.cast(pred_depth_map_uf, dtype = "float32")
-        pred_normals_map_uf = tf.cast(pred_normals_map_uf, dtype = "float32")
-        # only consider foreground pixels
-        depth_map_fg = true_depth_map * foreground_map
-        pred_depth_map_fg = pred_depth_map * foreground_map
-        pred_depth_map_uf_fg = pred_depth_map_uf * foreground_map
-        # normalize the depth maps
-        depth_map_fg = depth_map_fg - tf.reduce_mean(depth_map_fg)
-        pred_depth_map_fg = pred_depth_map_fg - tf.reduce_mean(pred_depth_map_fg)
-        pred_depth_map_uf_fg = pred_depth_map_uf_fg - tf.reduce_mean(pred_depth_map_uf_fg)
-        
-        filtered_loss = prediction_loss(pred_depth_map_fg, depth_map_fg, pred_normals_map, true_normals_map, foreground_map)
-        unfiltered_loss = prediction_loss(pred_depth_map_uf_fg, depth_map_fg, pred_normals_map_uf, true_normals_map, foreground_map)
-        
-        print("Filter loss improvement:", unfiltered_loss - filtered_loss)
-        """
+       
         if print_maps:
             plt.imshow(tf.math.abs(tf.cast(pred_depth_map, dtype="float32") - true_depth_map) * foreground_map)
             plt.imshow(tf.math.abs(tf.cast(pred_normals_map, dtype="float32") - true_normals_map) * foreground_map)
