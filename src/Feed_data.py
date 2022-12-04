@@ -78,6 +78,47 @@ def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=
 
     return total_loss / total_patches, depth_loss / total_patches, normal_loss / total_patches
 
+def patch_loop_separate_loss_category(model, data_generator, category, validation=False, n_batches=math.inf):
+    # set the options for the data generator
+    data_generator.set_validation(validation)
+    data_generator.set_patching(True)
+    n_batches = np.min([data_generator.__len__(), n_batches])
+    total_patches = 0
+    total_loss = 0
+    depth_loss = 0
+    normal_loss = 0
+    # description for progress bar
+    if validation:
+        desc = "Validation progress (patches)"
+    else:
+        desc = "Training progress"
+
+    data_generator.get_data_category(category, n_batches)
+
+    # loop over the data
+    # TO-DO: replace 10 with n_batches for final training loop
+    for i in tqdm(range(n_batches), desc=desc):
+        inputs, maps = data_generator.__getitem__(i)
+        patches = inputs[:, :, :, 0:3]
+        foreground_map = tf.reshape(inputs[:, :, :, 3], inputs.shape[:-1] + tuple([1]))
+        depth_map = tf.reshape(maps[:, :, :, 0], maps.shape[:-1] + tuple([1]))
+        normals_map = maps[:, :, :, 1:]
+        # do the respective step
+        if validation:
+            t_loss, d_loss, n_loss = model.validation_step_separate_loss(patches, foreground_map, depth_map, normals_map)
+            total_loss += t_loss
+            depth_loss += d_loss
+            normal_loss += n_loss
+        else:
+            t_loss, d_loss, n_loss = model.training_step_separate_loss(patches, foreground_map, depth_map, normals_map)
+            total_loss += t_loss
+            depth_loss += d_loss
+            normal_loss += n_loss
+        # remember number of patches
+        total_patches += len(patches)
+
+    return total_loss / total_patches, depth_loss / total_patches, normal_loss / total_patches
+
 def image_loop(model, data_generator, n_batches):
     # set the options for the data generator
     data_generator.set_validation(True)

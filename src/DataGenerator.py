@@ -35,6 +35,10 @@ class DataGenerator(tf.keras.utils.Sequence):
             np.random.seed(seed)
             np.random.shuffle(self.objs)
 
+        self.allObjs = self.objs
+
+        self.category = None
+
         n_objs = len(self.objs)
         
         self.n_train = int(n_objs * (1 - train_val_split))
@@ -56,10 +60,13 @@ class DataGenerator(tf.keras.utils.Sequence):
         return int(np.ceil(self.n_val / self.batch_size))
 
     def __len__(self):
-        if self.validation:
-            return self.__val_len__()
+        if self.category:
+            return self.objs // self.batch_size
         else:
-            return self.__train_len__()
+            if self.validation:
+                return self.__val_len__()
+            else:
+                return self.__train_len__()
 
     def __get_input__(self, name):
         img = Image.open(os.path.join(self.imagePath, name+".tiff"))
@@ -137,17 +144,25 @@ class DataGenerator(tf.keras.utils.Sequence):
         return tf.convert_to_tensor(conc)
 
     def __getitem__(self, index):
-        # assert that the index is lower than the maximum number of training batches
-        assert index < self.__len__()
-        
-        start_index = index * self.batch_size + self.validation * self.n_train
-        end_index = (index + 1) * self.batch_size + self.validation * self.n_train
-        
+        start_index = 0
+        end_index = 0
+        if self.category:
+            assert index < self.len(self.objs)
+
+            start_index = index * self.batch_size
+            end_index = (index + 1) * self.batch_size
+        else:
+            # assert that the index is lower than the maximum number of training batches
+            assert index < self.__len__()
+
+            start_index = index * self.batch_size + self.validation * self.n_train
+            end_index = (index + 1) * self.batch_size + self.validation * self.n_train
+
         if end_index > self.__last_index__():
             end_index = self.__last_index__()
-            
+
         batches = self.objs[start_index:end_index]
-        
+
         X, y = self.__get_data__(batches)
         return X, y
     
@@ -156,5 +171,23 @@ class DataGenerator(tf.keras.utils.Sequence):
         
     def set_patching(self, patching):
         self.patching = patching
-        
+
+    def get_object_categories(self):
+        return ['cloth', 'hoody', 'paper', 'sweater', 'tshirt']
+
+    def swap_category(self, category):
+        if self.validation:
+            self.objs = [i for i in self.allObjs[self.n_train:] if i.startswith(category)]
+        else:
+            self.objs = [i for i in self.allObjs[:self.n_train] if i.startswith(category)]
+        self.category = category
+
+        return category
+
+    def reset_category(self):
+        self.objs = self.allObjs
+        self.category = None
+
+    def current_category(self):
+        return self.category
     
