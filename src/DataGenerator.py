@@ -150,7 +150,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         start_index = 0
         end_index = 0
         if self.category:
-            assert index < self.len(self.objs)
+            assert index < len(self.objs)
 
             start_index = index * self.batch_size
             end_index = (index + 1) * self.batch_size
