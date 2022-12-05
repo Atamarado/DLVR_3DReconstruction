@@ -92,6 +92,6 @@ class TfNetwork(PatchInterface, tf.Module):
         self.normals_decoder.layers.save_weights(filename + "_normals")
 
     def load_weights(self, filename):
-        self.encoder.layers.set_weights(filename + "_encoder")
-        self.depth_decoder.layers.set_weights(filename + "_depth")
-        self.normals_decoder.layers.set_weights(filename + "_normals")
+        self.encoder.layers.load_weights(filename + "_encoder")
+        self.depth_decoder.layers.load_weights(filename + "_depth")
+        self.normals_decoder.layers.load_weights(filename + "_normals")
