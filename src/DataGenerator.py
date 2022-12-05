@@ -18,7 +18,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                  fixed_overlaps=False):
 
         self.batch_size = batch_size
-        self.validation = False
+        self.validation = validation
         self.train_val_split = train_val_split
         self.patching = patching
         self.patch_size = patch_size
@@ -27,8 +27,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.imagePath = os.path.join(path, 'images/')
         self.depthPath = os.path.join(path, 'depth_maps/')
         self.normalPath = os.path.join(path, 'normals/')
-
-        # print("Seed", seed)
         
         self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.imagePath)]
         if shuffle:
@@ -79,10 +77,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         zero_bool = np.array(img_batch == 0)
         n_zeros = zero_bool.sum(axis=-1, keepdims=True)
         foreground = (n_zeros != 3).astype(np.float32)
-
-        # This is not beneficial if we want to create the foreground match for single images
-        #assert foreground.shape == (
-            #img_batch.shape[0], img_batch.shape[1], img_batch.shape[2], 1)
 
         return foreground
 

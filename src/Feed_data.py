@@ -55,8 +55,7 @@ def patch_loop_separate_loss(model, data_generator, validation=False, n_batches=
     else:
         desc = "Training progress"
     # loop over the data
-    # TO-DO: replace 10 with n_batches for final training loop
-    for i in tqdm(range(n_batches), desc=desc):
+    for i in tqdm(range(n_batches), desc=desc): # tqdm prints the dynamic 
         inputs, maps = data_generator.__getitem__(i)
         patches = inputs[:, :, :, 0:3]
         foreground_map = tf.reshape(inputs[:, :, :, 3], inputs.shape[:-1] + tuple([1]))
@@ -84,7 +83,6 @@ def image_loop(model, data_generator, n_batches):
     data_generator.set_patching(False)
     n_batches = np.min([data_generator.__len__(), n_batches])
     batch_size = data_generator.batch_size
-    # To-Do change this after investigation
     loss = 0
     # loop over all images
     for i in tqdm(range(n_batches), desc = "Validation progress (images)"):
