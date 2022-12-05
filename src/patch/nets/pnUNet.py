@@ -4,9 +4,8 @@ Created on Sun Oct 23 19:19:22 2022
 
 @author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
-import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D, Flatten, Dense, Input, Conv2DTranspose, Concatenate
+from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, Flatten, Dense, Input, Concatenate
 from patch.nets.PatchInterface import ConvLayer, ConvTransposeLayer, PatchInterface
 
 class Decoder():
@@ -38,6 +37,10 @@ class Decoder():
         self.out = out
 
 class TfNetwork(PatchInterface, tf.Module):
+    """
+    UNet-like modification of the baseline PatchNet, by adding connections between the encoder and both decoders at each
+    upsampling stage
+    """
     def __init__(self, patch_size, min_channels):
         input_size = (patch_size, patch_size, 3)
 

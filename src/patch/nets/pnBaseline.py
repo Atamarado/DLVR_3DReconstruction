@@ -71,6 +71,9 @@ class Decoder(tf.Module):
         
 
 class TfNetwork(PatchInterface, tf.Module):
+    """
+    Baseline PatchNet, implemented following the indications given in the original article (https://ieeexplore.ieee.org/document/9022546)
+    """
     def __init__(self, patch_size, min_channels, batchNorm=True):
         input_size = (patch_size, patch_size, 3)
         encoded_size = (None, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
