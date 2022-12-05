@@ -61,7 +61,8 @@ class DataGenerator(tf.keras.utils.Sequence):
 
     def __len__(self):
         if self.category:
-            return len(self.objs) // self.batch_size
+            n_objs = len(self.objs)
+            return n_objs // self.batch_size
         else:
             if self.validation:
                 return self.__val_len__()
