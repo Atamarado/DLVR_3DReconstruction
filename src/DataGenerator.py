@@ -98,7 +98,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         return zero_mean_depth_batch
 
-    def __get_data__(self, batches):
+    def __get_data__(self, batches, raw_depth=False):
         # Generates data containing batch_size samples
         X_batch = [self.__get_input__(name) for name in batches]
         y_batch = [self.__get_output__(name) for name in batches]
@@ -122,11 +122,14 @@ class DataGenerator(tf.keras.utils.Sequence):
             # we can now simply overwrite the batch variables
             X_batch = X_patched 
             y_batch = np.array(y_patched)
-            # normalize the depth map
-            depth_batch = np.reshape(y_batch[:, :, :, 0], y_batch.shape[:-1] + tuple([1]))
-            normalized_depth_batch = self.__normalize_depth__(depth_batch)
-            # concatenate back together
-            y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=-1)
+            
+            if not raw_depth:
+                # normalize the depth map
+                depth_batch = np.reshape(y_batch[:, :, :, 0], y_batch.shape[:-1] + tuple([1]))
+                normalized_depth_batch = self.__normalize_depth__(depth_batch)
+                # concatenate back together
+                y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=-1)
+            
             y_batch = tf.convert_to_tensor(y_batch)
         
         return X_batch, y_batch
@@ -143,7 +146,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         conc = np.concatenate((depth, normal), axis=2)
         return tf.convert_to_tensor(conc)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index, raw_depth=False):
         start_index = 0
         end_index = 0
         if self.category:
@@ -163,7 +166,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         batches = self.objs[start_index:end_index]
 
-        X, y = self.__get_data__(batches)
+        X, y = self.__get_data__(batches, raw_depth)
         return X, y
     
     def set_validation(self, validation):
