@@ -2,7 +2,7 @@
 """
 Created on Thu Nov 17 13:46:53 2022
 
-@author: xZoCk
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 
 import math

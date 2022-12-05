@@ -2,7 +2,7 @@
 """
 Created on Thu Nov 10 11:02:17 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 from patch.PatchNet_tf import PatchNet
 from patch.Patching import tensor_patching

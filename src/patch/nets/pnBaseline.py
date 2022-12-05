@@ -2,7 +2,7 @@
 """
 Created on Sun Oct 23 19:19:22 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 import tensorflow as tf
 from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D, Input
