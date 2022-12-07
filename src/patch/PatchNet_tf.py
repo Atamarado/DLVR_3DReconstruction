@@ -2,7 +2,7 @@
 """
 Created on Sun Oct 23 19:19:22 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 import numpy as np
 import tensorflow as tf
@@ -69,7 +69,6 @@ class PatchNet(tf.Module):
         #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
         return prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
-    # TO-DO: delete overlap after investigation
     def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size, self.fixed_overlaps)
         # forward pass

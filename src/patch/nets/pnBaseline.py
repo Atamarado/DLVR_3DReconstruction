@@ -2,7 +2,7 @@
 """
 Created on Sun Oct 23 19:19:22 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 import tensorflow as tf
 from tensorflow.keras.layers import MaxPool2D, UpSampling2D, Conv2D, Input
@@ -71,6 +71,9 @@ class Decoder(tf.Module):
         
 
 class TfNetwork(PatchInterface, tf.Module):
+    """
+    Baseline PatchNet, implemented following the indications given in the original article (https://ieeexplore.ieee.org/document/9022546)
+    """
     def __init__(self, patch_size, min_channels, batchNorm=True):
         input_size = (patch_size, patch_size, 3)
         encoded_size = (None, int(patch_size / 32), int(patch_size / 32), min_channels * 8)
@@ -85,3 +88,13 @@ class TfNetwork(PatchInterface, tf.Module):
         normal_map = self.normals_decoder(encoded)
 
         return depth_map, normal_map
+
+    def save_weights(self, filename):
+        self.encoder.layers.save_weights(filename + "_encoder")
+        self.depth_decoder.layers.save_weights(filename + "_depth")
+        self.normals_decoder.layers.save_weights(filename + "_normals")
+
+    def load_weights(self, filename):
+        self.encoder.layers.load_weights(filename + "_encoder")
+        self.depth_decoder.layers.load_weights(filename + "_depth")
+        self.normals_decoder.layers.load_weights(filename + "_normals")

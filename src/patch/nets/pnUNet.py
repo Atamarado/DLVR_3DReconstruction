@@ -2,11 +2,10 @@
 """
 Created on Sun Oct 23 19:19:22 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
-import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D, Flatten, Dense, Input, Conv2DTranspose, Concatenate
+from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, Flatten, Dense, Input, Concatenate
 from patch.nets.PatchInterface import ConvLayer, ConvTransposeLayer, PatchInterface
 
 class Decoder():
@@ -38,6 +37,10 @@ class Decoder():
         self.out = out
 
 class TfNetwork(PatchInterface, tf.Module):
+    """
+    UNet-like modification of the baseline PatchNet, by adding connections between the encoder and both decoders at each
+    upsampling stage
+    """
     def __init__(self, patch_size, min_channels):
         input_size = (patch_size, patch_size, 3)
 
@@ -63,9 +66,11 @@ class TfNetwork(PatchInterface, tf.Module):
         p5 = MaxPool2D(2, data_format='channels_last')(c5)
 
         f1 = Flatten()(p5)
-        d1 = Dense(6400)(f1)
+        d1 = Dense(1024, activation="relu")(f1)
 
-        input_layer_decoder = tf.reshape(d1, [-1]+(c5.get_shape()[1:].as_list()))
+        reshaped = tf.reshape(d1, [-1]+(p5.get_shape()[1:].as_list()))
+
+        input_layer_decoder = UpSampling2D()(reshaped)
 
         conv_connections = [c1, c2, c3, c4, c5]
 
@@ -80,3 +85,9 @@ class TfNetwork(PatchInterface, tf.Module):
 
     def __call__(self, x):
         return self.network.call(x)
+
+    def save_weights(self, filename):
+        self.network.save_weights(filename)
+
+    def load_weights(self, filename):
+        self.network.load_weights(filename)

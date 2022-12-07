@@ -2,7 +2,7 @@
 """
 Created on Tue Nov 15 17:45:12 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 
 from patch.nets.pnInception import TfNetwork

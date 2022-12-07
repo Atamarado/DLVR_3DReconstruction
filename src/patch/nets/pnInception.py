@@ -2,11 +2,11 @@
 """
 Created on Sun Oct 23 19:19:22 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU, MaxPool2D, UpSampling2D, Flatten, Dense, Input, Conv2DTranspose, Concatenate
+from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, Input
 from patch.nets.PatchInterface import ConvLayer, ConvTransposeLayer, PatchInterface
 from patch.nets.InceptionModules import *
 
@@ -35,6 +35,10 @@ class Decoder():
         self.out = l
 
 class TfNetwork(PatchInterface, tf.Module):
+    """
+    Modification of the baseline model that changes changes the encoder, adding inception modules into it
+    (see InceptionModules.py for more info)
+    """
     def __init__(self, patch_size, min_channels):
         input_size = (patch_size, patch_size, 3)
 
@@ -60,3 +64,9 @@ class TfNetwork(PatchInterface, tf.Module):
 
     def __call__(self, x):
         return self.network.call(x)
+
+    def save_weights(self, filename):
+        self.network.save_weights(filename)
+
+    def load_weights(self, filename):
+        self.network.load_weights(filename)

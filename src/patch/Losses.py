@@ -2,7 +2,7 @@
 """
 Created on Thu Nov 10 13:32:55 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 
 import tensorflow as tf
@@ -15,7 +15,7 @@ def mean_squared_error(true, pred, batched = True):
     diff = true - pred
     return tf.math.reduce_mean(diff**2)
 
-def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.float32:
+def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_patch: tf.Tensor, per_pixel = True) -> tf.float32:
     """Calculates the loss of a patch's relative depth map prediction
 
     Args:
@@ -33,6 +33,9 @@ def depth_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_pa
     # case distinction between patches and whole images
     dims = len(abs_diff.shape)
     
+    if not per_pixel:
+        return abs_diff
+
     if dims == 4:
         sum_axis = range(1, dims)
         return tf.math.reduce_sum(tf.math.reduce_sum(abs_diff, axis = sum_axis) / tf.math.reduce_sum(foreground_mask_patch, axis = sum_axis))

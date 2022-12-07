@@ -18,7 +18,7 @@ class DataGenerator(tf.keras.utils.Sequence):
                  fixed_overlaps=False):
 
         self.batch_size = batch_size
-        self.validation = False
+        self.validation = validation
         self.train_val_split = train_val_split
         self.patching = patching
         self.patch_size = patch_size
@@ -27,13 +27,15 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.imagePath = os.path.join(path, 'images/')
         self.depthPath = os.path.join(path, 'depth_maps/')
         self.normalPath = os.path.join(path, 'normals/')
-
-        # print("Seed", seed)
         
         self.objs = [os.path.splitext(filename)[0] for filename in os.listdir(self.imagePath)]
         if shuffle:
             np.random.seed(seed)
             np.random.shuffle(self.objs)
+
+        self.allObjs = self.objs
+
+        self.category = None
 
         n_objs = len(self.objs)
         
@@ -56,10 +58,13 @@ class DataGenerator(tf.keras.utils.Sequence):
         return int(np.ceil(self.n_val / self.batch_size))
 
     def __len__(self):
-        if self.validation:
-            return self.__val_len__()
+        if self.category:
+            return self.n_objs // self.batch_size
         else:
-            return self.__train_len__()
+            if self.validation:
+                return self.__val_len__()
+            else:
+                return self.__train_len__()
 
     def __get_input__(self, name):
         img = Image.open(os.path.join(self.imagePath, name+".tiff"))
@@ -72,10 +77,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         zero_bool = np.array(img_batch == 0)
         n_zeros = zero_bool.sum(axis=-1, keepdims=True)
         foreground = (n_zeros != 3).astype(np.float32)
-
-        # This is not beneficial if we want to create the foreground match for single images
-        #assert foreground.shape == (
-            #img_batch.shape[0], img_batch.shape[1], img_batch.shape[2], 1)
 
         return foreground
 
@@ -91,7 +92,7 @@ class DataGenerator(tf.keras.utils.Sequence):
 
         return zero_mean_depth_batch
 
-    def __get_data__(self, batches):
+    def __get_data__(self, batches, raw_depth=False):
         # Generates data containing batch_size samples
         X_batch = [self.__get_input__(name) for name in batches]
         y_batch = [self.__get_output__(name) for name in batches]
@@ -115,11 +116,14 @@ class DataGenerator(tf.keras.utils.Sequence):
             # we can now simply overwrite the batch variables
             X_batch = X_patched 
             y_batch = np.array(y_patched)
-            # normalize the depth map
-            depth_batch = np.reshape(y_batch[:, :, :, 0], y_batch.shape[:-1] + tuple([1]))
-            normalized_depth_batch = self.__normalize_depth__(depth_batch)
-            # concatenate back together
-            y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=-1)
+            
+            if not raw_depth:
+                # normalize the depth map
+                depth_batch = np.reshape(y_batch[:, :, :, 0], y_batch.shape[:-1] + tuple([1]))
+                normalized_depth_batch = self.__normalize_depth__(depth_batch)
+                # concatenate back together
+                y_batch = np.concatenate((normalized_depth_batch, y_batch[:, :, :, 1:]), axis=-1)
+            
             y_batch = tf.convert_to_tensor(y_batch)
         
         return X_batch, y_batch
@@ -136,19 +140,27 @@ class DataGenerator(tf.keras.utils.Sequence):
         conc = np.concatenate((depth, normal), axis=2)
         return tf.convert_to_tensor(conc)
 
-    def __getitem__(self, index):
-        # assert that the index is lower than the maximum number of training batches
-        assert index < self.__len__()
-        
-        start_index = index * self.batch_size + self.validation * self.n_train
-        end_index = (index + 1) * self.batch_size + self.validation * self.n_train
-        
+    def __getitem__(self, index, raw_depth=False):
+        start_index = 0
+        end_index = 0
+        if self.category:
+            assert index < len(self.objs)
+
+            start_index = index * self.batch_size
+            end_index = (index + 1) * self.batch_size
+        else:
+            # assert that the index is lower than the maximum number of training batches
+            assert index < self.__len__()
+
+            start_index = index * self.batch_size + self.validation * self.n_train
+            end_index = (index + 1) * self.batch_size + self.validation * self.n_train
+
         if end_index > self.__last_index__():
             end_index = self.__last_index__()
-            
+
         batches = self.objs[start_index:end_index]
-        
-        X, y = self.__get_data__(batches)
+
+        X, y = self.__get_data__(batches, raw_depth)
         return X, y
     
     def set_validation(self, validation):
@@ -156,5 +168,24 @@ class DataGenerator(tf.keras.utils.Sequence):
         
     def set_patching(self, patching):
         self.patching = patching
-        
+
+    def get_object_categories(self):
+        return ['cloth', 'hoody', 'paper', 'sweater', 'tshirt']
+
+    def swap_category(self, category):
+        if self.validation:
+            self.objs = [i for i in self.allObjs[self.n_train:] if i.startswith(category)]
+        else:
+            self.objs = [i for i in self.allObjs[:self.n_train] if i.startswith(category)]
+        self.category = category
+        self.n_objs = len(self.objs)
+
+        return category
+
+    def reset_category(self):
+        self.objs = self.allObjs
+        self.category = None
+
+    def current_category(self):
+        return self.category
     

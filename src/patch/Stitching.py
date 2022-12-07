@@ -2,7 +2,7 @@
 """
 Created on Mon Oct 24 10:55:26 2022
 
-@author: Marc Johler
+@author: Krisztián Bokor, Ginés Carreto Picón, Marc Johler
 """
 import numpy as np
 import tensorflow as tf
