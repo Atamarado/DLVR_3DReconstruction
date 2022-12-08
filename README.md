@@ -1,19 +1,26 @@
 # DLVR_3DReconstruction
 
-## Pixel2Mesh
+### Authors:
+* *Bokor, Krisztián*
+* *Carreto Picón, Ginés*
+* *Johler, Marc*
 
-### Downloading the trained model
+Deep learning-based project in 3D Reconstruction, created as part of the [***Deep Learning For Visual Recognition***](https://kursuskatalog.au.dk/en/course/114392/Deep-Learning-for-Visual-Recognition) course at Aarhus University.
 
-Download the pre-trained model and unzip to the `Data/` folder.
+This project focuses in revisiting the publication [*Patch-based reconstruction of a textureless deformable 3d surface from a single rgb image*](https://ieeexplore.ieee.org/document/9022546) and doing some experiments trying different architectures and evaluating its performance.
 
-- https://drive.google.com/file/d/1gD-dk-XrAa5mfrgdZSunjaS6pUUWsZgU/view?usp=sharing
+In order to replicate the architecture and the _patching_ technique, a own created library has been developed (*PatchNet library*), based on `Tensorflow 2.9.2` API.
 
-### Running the demo
+Please, check out the project report (TBD) and the Demo notebook (TBF) to fully understand the project idea and the library.
 
-```
-python demo.py --image Data/examples/plane.png
-```
+## PatchNet library
 
-Run the demo code and the output mesh file is saved in `Data/examples/plane.obj`
+*PatchNet library* can be found under `src/` folder, and contains multiple functionalities to allow training and evaluation over the problem proposed.
 
-The same happens with any of the supplied `.png` files in examples.
+## _Dataset_ used
+
+The *dataset* used for this project was created for the article [Learning to Reconstruct Texture-less Deformable Surfaces from a Single View](https://arxiv.org/abs/1803.08908), and is freely available to download [**here**](https://www.epfl.ch/labs/cvlab/data/texless-defsurf-data/). 
+
+A preprocessed version created for this project can be downloaded [**using this link**](https://drive.google.com/file/d/1Wg2dB8y98aektVxC70ZPl62QjtSBxiYZ/view?usp=sharing). You can find the script that led to this preprocessed version in the file `preprocess/prepare_data.py`.
+
+Please, remember to cite the original creators of the _dataset_ if you use it.
