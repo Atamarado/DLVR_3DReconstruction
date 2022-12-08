@@ -12,6 +12,7 @@ from patch.Stitching import depth_map_stitching, normals_map_stitching
 from patch.Losses import prediction_loss, prediction_loss_separate_losses
 from patch.Patching import tensor_patching
 
+# Class for the PatchNet model
 class PatchNet(tf.Module):
     def __init__(self, patch_size, min_channels, fixed_overlaps, network, name = "patchnet"):
         # seed = 758
@@ -33,6 +34,7 @@ class PatchNet(tf.Module):
     def __call__(self, x):
         return self.network(x)
     
+    # casual training step
     def training_step(self, x, foreground_map, depth_map, normals_map):
         with tf.GradientTape(persistent = False) as tape:
             pred_depth_map, pred_normals_map = self(x)
@@ -46,6 +48,7 @@ class PatchNet(tf.Module):
         self.opt.apply_gradients(zip(grads, parameters))
         return loss
     
+    # training step to observe depth and normals losses seperately
     def training_step_separate_loss(self, x, foreground_map, depth_map, normals_map):
         with tf.GradientTape(persistent=False) as tape:
             pred_depth_map, pred_normals_map = self(x)
@@ -59,16 +62,18 @@ class PatchNet(tf.Module):
         self.opt.apply_gradients(zip(grads, parameters))
         return loss, depth_loss, normal_loss
 
-
+    # casual validation step on patches
     def validation_step(self, x, foreground_map, depth_map, normals_map):
         pred_depth_map, pred_normals_map = self(x)
         return prediction_loss(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
 
+    # validation step to observe depth and normals losses seperately
     def validation_step_separate_loss(self, x, foreground_map, depth_map, normals_map):
         pred_depth_map, pred_normals_map = self(x)
         #loss = mean_squared_error(depth_map, pred_depth_map) + mean_squared_error(normals_map, pred_normals_map)
         return prediction_loss_separate_losses(pred_depth_map, depth_map, pred_normals_map, normals_map, foreground_map)
         
+    # predict normals and depths with the network 
     def forward_image(self, img, foreground_map, print_maps = True, true_depth_map = None, true_normals_map = None):
         patches, height_intervals, width_intervals = tensor_patching(img, self.patch_size, self.fixed_overlaps)
         # forward pass
@@ -76,14 +81,14 @@ class PatchNet(tf.Module):
         # stitch the maps together
         pred_depth_map = depth_map_stitching(img.shape, depth_maps, height_intervals, width_intervals, sigma = 10)
         pred_normals_map = normals_map_stitching(img.shape, normals_maps, height_intervals, width_intervals)
-       
+        
         if print_maps:
             plt.imshow(tf.math.abs(tf.cast(pred_depth_map, dtype="float32") - true_depth_map) * foreground_map)
             plt.imshow(tf.math.abs(tf.cast(pred_normals_map, dtype="float32") - true_normals_map) * foreground_map)
             #plt.imshow(normals_maps)
         return pred_depth_map, pred_normals_map
         
-    # method for feeding a whole picture and 
+    # method for feeding a whole picture and validating/testing against ground truth
     def validate_on_image(self, img, foreground_map, depth_map, normals_map, print_maps = False):
         pred_depth_map, pred_normals_map = self.forward_image(img, foreground_map, print_maps, depth_map, normals_map)
         # cast to correct float format
