@@ -11,9 +11,9 @@ This project focuses in revisiting the publication [*Patch-based reconstruction 
 
 In order to replicate the architecture and the _patching_ technique, a own created library has been developed (*PatchNet library*), based on `Tensorflow 2.9.2` API.
 
-Please, check out the project report (TBD) and the Demo notebook (TBF) to fully understand the project idea and the library.
+Please, check out the project report (TBD) and the Demo notebook (`Demo_notebook.ipynb`) to fully understand the project idea and the library.
 
-## PatchNet library
+## *PatchNet library*
 
 *PatchNet library* can be found under `src/` folder, and contains multiple functionalities to allow training and evaluation over the problem proposed.
 
