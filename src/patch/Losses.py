@@ -122,7 +122,6 @@ def length_loss(pred_patch: tf.Tensor, foreground_mask_patch: tf.Tensor) -> tf.f
 
     return norm_pred
 
-
 def normal_loss(pred_patch: tf.Tensor, truth_patch: tf.Tensor, foreground_mask_patch: tf.Tensor, per_pixel=True) -> tf.float32:
     """Calculates the loss of a patch's normal map prediction
 
