@@ -13,6 +13,10 @@ In order to replicate the architecture and the _patching_ technique, a own creat
 
 Please, check out the project report (TBD) and the Demo notebook (`Demo_notebook.ipynb`) to fully understand the project idea and the library.
 
+## *Base environment*
+
+If you want to set up the environment, locally or on a server, you can use Python base 3.9.15, with all the packages determined in `env.yml`.
+
 ## *PatchNet library*
 
 *PatchNet library* can be found under `src/` folder, and contains multiple functionalities to allow training and evaluation over the problem proposed.
